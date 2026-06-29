@@ -50,7 +50,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-sm text-gray-500 mb-4">Every Opportunity, One Platform. Discover your next career move with SPROUTHR.</p>
-            <div className="flex gap-3">
+            <div className="flex gap-2 flex-wrap">
               {[
                 { href: 'https://t.me/sprouthr', icon: 'fa-telegram', hoverColor: '#0088cc' },
                 { href: 'https://wa.me/message/YOUR_WA_LINK', icon: 'fa-whatsapp', hoverColor: '#25D366' },

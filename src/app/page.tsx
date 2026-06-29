@@ -124,19 +124,23 @@ function ClosingSoonSection() {
 
   useEffect(() => {
     const supabase = createClient();
-    // Fetch jobs with upcoming deadlines (closing soon)
+    // Only jobs closing within the next 30 days
+    const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     supabase.from('jobs').select('*')
       .not('deadline', 'is', null)
-      .gte('deadline', new Date().toISOString().split('T')[0])
+      .gte('deadline', new Date().toISOString())
+      .lte('deadline', thirtyDaysFromNow)
       .order('deadline', { ascending: true })
       .limit(3)
       .then(({ data }) => {
         if (data && data.length > 0) {
           setClosingJobs(data);
         } else {
-          // Fallback: newest jobs if none closing soon
+          // Fallback: any future deadline
           supabase.from('jobs').select('*')
-            .order('created_at', { ascending: false })
+            .not('deadline', 'is', null)
+            .gte('deadline', new Date().toISOString())
+            .order('deadline', { ascending: true })
             .limit(3)
             .then(({ data: fallback }) => {
               if (fallback) setClosingJobs(fallback);
