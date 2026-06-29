@@ -124,11 +124,24 @@ function ClosingSoonSection() {
 
   useEffect(() => {
     const supabase = createClient();
+    // Fetch jobs with upcoming deadlines (closing soon)
     supabase.from('jobs').select('*')
-      .order('created_at', { ascending: false })
+      .not('deadline', 'is', null)
+      .gte('deadline', new Date().toISOString().split('T')[0])
+      .order('deadline', { ascending: true })
       .limit(3)
       .then(({ data }) => {
-        if (data) setClosingJobs(data);
+        if (data && data.length > 0) {
+          setClosingJobs(data);
+        } else {
+          // Fallback: newest jobs if none closing soon
+          supabase.from('jobs').select('*')
+            .order('created_at', { ascending: false })
+            .limit(3)
+            .then(({ data: fallback }) => {
+              if (fallback) setClosingJobs(fallback);
+            });
+        }
       });
   }, []);
 
@@ -138,23 +151,33 @@ function ClosingSoonSection() {
     <section className="py-20 bg-[#f0f2f5]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-3xl font-bold text-gray-900 mb-4 font-space text-center" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-          <i className="fas fa-clock mr-3 text-[#22c55e]"></i>Newest Listings
+          <i className="fas fa-clock mr-3 text-[#ef4444]"></i>Closing Soon
         </h2>
-        <p className="text-gray-500 mb-10 text-center">Check out the most recent opportunities</p>
+        <p className="text-gray-500 mb-10 text-center">Don&apos;t miss out — deadlines are approaching</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
           {closingJobs.map((job, i) => (
             <ScrollReveal3D key={job.id} delay={i * 150}>
-              <div className="bg-white rounded-2xl p-6 card-hover cursor-pointer" onClick={() => navigateTo(`opportunity/${job.id}?_apiUuid=${job.id}`)}>
+              <div className="bg-white rounded-2xl p-6 card-hover cursor-pointer border-l-4 border-l-[#ef4444]" onClick={() => navigateTo(`opportunity/${job.id}?_apiUuid=${job.id}`)}>
                 <div className="flex items-center gap-3 mb-3">
                   <img src={job.company_logo || `https://ui-avatars.com/api/?name=${job.company}&background=22c55e&color=fff&bold=true`} alt="" className="w-10 h-10 rounded-xl object-cover" />
                   <div>
                     <h3 className="font-semibold text-gray-900 text-sm">{job.title}</h3>
-                    <p className="text-xs text-gray-400">{job.company}</p>
+                    <p className="text-xs text-gray-400">{job.company || 'Unknown Company'}</p>
                   </div>
                 </div>
                 <div className="flex items-center justify-between text-xs text-gray-400">
                   <span><i className="fas fa-map-marker-alt mr-1"></i>{job.location || 'Nigeria'}</span>
-                  <span className="font-medium text-[#22c55e]">{job.type || 'New'}</span>
+                  {job.deadline ? (
+                    <span className="font-medium text-[#ef4444]">
+                      <i className="fas fa-hourglass-half mr-1"></i>
+                      {(() => {
+                        const diff = Math.ceil((new Date(job.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                        return diff <= 0 ? 'Closing today' : `${diff} days left`;
+                      })()}
+                    </span>
+                  ) : (
+                    <span className="font-medium text-[#22c55e]">{job.type || 'New'}</span>
+                  )}
                 </div>
               </div>
             </ScrollReveal3D>
@@ -197,83 +220,6 @@ export default function HomePage() {
       <FeaturedOpportunities />
       <WhatWeOffer />
       <ClosingSoonSection />
-
-      {/* Community */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4 font-space" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            Join Our Community
-          </h2>
-          <p className="text-gray-500 mb-8 max-w-lg mx-auto">
-            Stay ahead with career tips, job alerts, and exclusive opportunities shared daily in our community.
-          </p>
-          <div className="flex justify-center gap-4">
-            <a href="https://t.me/sprouthr" target="_blank" rel="noopener noreferrer" className="px-6 py-3 rounded-xl bg-white border border-gray-200 text-gray-700 font-medium text-sm hover:border-[#0088cc] hover:text-[#0088cc] transition-all">
-              <i className="fab fa-telegram mr-2"></i> Telegram Channel
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-gray-50 border-t border-gray-100 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div>
-              <h4 className="font-bold text-gray-900 mb-4 text-sm">Resources</h4>
-              <ul className="space-y-2">
-                <li><Link href="/blog" className="text-sm text-gray-500 hover:text-[#22c55e]">Blog</Link></li>
-                <li><Link href="/cv-tips" className="text-sm text-gray-500 hover:text-[#22c55e]">CV Tips</Link></li>
-                <li><Link href="/interview-guide" className="text-sm text-gray-500 hover:text-[#22c55e]">Interview Guide</Link></li>
-                <li><Link href="/career-advice" className="text-sm text-gray-500 hover:text-[#22c55e]">Career Advice</Link></li>
-                <li><Link href="/salary-guide" className="text-sm text-gray-500 hover:text-[#22c55e]">Salary Guide</Link></li>
-                <li><Link href="/faq" className="text-sm text-gray-500 hover:text-[#22c55e]">FAQ</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold text-gray-900 mb-4 text-sm">Company</h4>
-              <ul className="space-y-2">
-                <li><Link href="/about" className="text-sm text-gray-500 hover:text-[#22c55e]">About</Link></li>
-                <li><Link href="/contact" className="text-sm text-gray-500 hover:text-[#22c55e]">Contact</Link></li>
-                <li><Link href="/for-employers" className="text-sm text-gray-500 hover:text-[#22c55e]">For Employers</Link></li>
-                <li><Link href="/careers" className="text-sm text-gray-500 hover:text-[#22c55e]">Careers</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold text-gray-900 mb-4 text-sm">Opportunities</h4>
-              <ul className="space-y-2">
-                <li><Link href="/jobs" className="text-sm text-gray-500 hover:text-[#22c55e]">Jobs</Link></li>
-                <li><Link href="/internships" className="text-sm text-gray-500 hover:text-[#22c55e]">Internships</Link></li>
-                <li><Link href="/scholarships" className="text-sm text-gray-500 hover:text-[#22c55e]">Scholarships</Link></li>
-                <li><Link href="/fellowships" className="text-sm text-gray-500 hover:text-[#22c55e]">Fellowships</Link></li>
-                <li><Link href="/graduate-programs" className="text-sm text-gray-500 hover:text-[#22c55e]">Graduate Programs</Link></li>
-                <li><Link href="/volunteer" className="text-sm text-gray-500 hover:text-[#22c55e]">Volunteer</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold text-gray-900 mb-4 text-sm">SPROUTHR</h4>
-              <p className="text-sm text-gray-500 leading-relaxed mb-4">
-                Your career growth platform — helping Nigerians find opportunities and prepare for success.
-              </p>
-              <div className="flex gap-3">
-                <a href="https://t.me/sprouthr" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-[#0088cc]/10 flex items-center justify-center text-[#0088cc] hover:bg-[#0088cc]/20 transition-all">
-                  <i className="fab fa-telegram"></i>
-                </a>
-                <a href="https://x.com/sprouthr" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-all">
-                  <i className="fab fa-x-twitter"></i>
-                </a>
-              </div>
-            </div>
-          </div>
-          <div className="mt-10 pt-8 border-t border-gray-200 text-center text-xs text-gray-400">
-            &copy; {new Date().getFullYear()} SPROUTHR. All rights reserved.
-          </div>
-        </div>
-      </footer>
     </div>
   );
-}
-
-function Link({ href, className, children }: { href: string; className?: string; children: React.ReactNode }) {
-  return <a href={href} className={className}>{children}</a>;
 }
