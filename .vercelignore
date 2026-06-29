@@ -1,0 +1,10 @@
+# Temp scripts for fixing data — not needed for deployment
+fix_company.cjs
+fix_remaining*.cjs
+fix_manual.cjs
+fix_final.cjs
+fix_last.cjs
+list_remaining.cjs
+
+# Local dev files
+README.md
