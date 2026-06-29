@@ -38,7 +38,10 @@ export function getTypeBadgeClass(type: string): string {
     scholarship: 'badge-scholarship',
     fellowship: 'badge-fellowship',
     volunteer: 'badge-volunteer',
+    graduate: 'badge-graduate',
     graduate_program: 'badge-graduate_program',
+    bootcamp: 'badge-bootcamp',
+    grant: 'badge-grant',
   };
   return map[type] || 'badge-job';
 }
@@ -50,7 +53,10 @@ export function getTypeLabel(type: string): string {
     scholarship: 'Scholarship',
     fellowship: 'Fellowship',
     volunteer: 'Volunteer',
+    graduate: 'Graduate Program',
     graduate_program: 'Graduate Program',
+    bootcamp: 'Bootcamp',
+    grant: 'Grant',
   };
   return map[type] || type;
 }

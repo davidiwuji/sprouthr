@@ -50,13 +50,8 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href={state.user ? '/dashboard' : '/'} className="flex items-center gap-1.5 flex-shrink-0">
-            <div className="w-8 h-8 rounded-lg bg-[#22c55e] flex items-center justify-center">
-              <i className="fas fa-seedling text-white text-sm"></i>
-            </div>
-            <span className="text-base md:text-lg font-bold font-space" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              SPROUT<span className="text-[#22c55e]">HR</span>
-            </span>
+          <Link href={state.user ? '/dashboard' : '/'} className="flex-shrink-0">
+            <img src="/Logo.png" alt="SPROUTHR" className="h-12 md:h-16 w-auto" />
           </Link>
 
           {/* Desktop Nav */}

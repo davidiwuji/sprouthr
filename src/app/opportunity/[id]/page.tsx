@@ -135,35 +135,43 @@ export default function OpportunityDetailPage() {
 
   const oppLocation = formatLocation(displayOpp.location);
 
-  // Apply via email instead of opening external website
-  const handleApplyEmail = () => {
+  // Apply - redirect to the job's source URL for actual application
+  const handleApplyRedirect = () => {
     if (!state.user) {
-      showToast('Please sign in to apply', 'info');
+      showToast('Please sign in to view application details', 'info');
       navigateTo('auth/signup');
       return;
     }
 
-    const subject = encodeURIComponent(`Application for ${displayOpp.title} - ${displayOpp.company}`);
-    const bodyLines = [
-      `Dear Hiring Team,`,
-      ``,
-      `I am writing to express my interest in the ${displayOpp.title} position at ${displayOpp.company}.`,
-      ``,
-      `---`,
-      `Position: ${displayOpp.title}`,
-      `Company: ${displayOpp.company}`,
-      `Location: ${oppLocation}`,
-      `Type: ${displayOpp.subtype || displayOpp.type}`,
-      `Salary: ${displayOpp.salary || 'Negotiable'}`,
-      ``,
-      `---`,
-      `Powered by SPROUT`,
-      `Find your dream opportunity at https://sprouthr.com`,
-    ].join('\n');
-    const body = encodeURIComponent(bodyLines);
-
-    window.location.href = `mailto:apply@sprouthr.com?subject=${subject}&body=${body}`;
-    showToast('Email application opened in your email client', 'info');
+    // For scholarships & grants, open the source URL (usually the official website)
+    // For jobs, open the source URL (usually has company contact/apply info)
+    const redirectUrl = displayOpp.applicationUrl || displayOpp.url;
+    if (redirectUrl) {
+      window.open(redirectUrl, '_blank', 'noopener,noreferrer');
+      showToast('Opening application page in new tab', 'info');
+    } else {
+      // Fallback: use email
+      const subject = encodeURIComponent(`Application for ${displayOpp.title} - ${displayOpp.company}`);
+      const bodyLines = [
+        `Dear Hiring Team,`,
+        ``,
+        `I am writing to express my interest in the ${displayOpp.title} position at ${displayOpp.company}.`,
+        ``,
+        `---`,
+        `Position: ${displayOpp.title}`,
+        `Company: ${displayOpp.company}`,
+        `Location: ${oppLocation}`,
+        `Type: ${displayOpp.subtype || displayOpp.type}`,
+        `Salary: ${displayOpp.salary || 'Negotiable'}`,
+        ``,
+        `---`,
+        `Powered by SproutHR`,
+        `Find your dream opportunity at https://sprouthr.com`,
+      ].join('\n');
+      const body = encodeURIComponent(bodyLines);
+      window.location.href = `mailto:apply@sprouthr.com?subject=${subject}&body=${body}`;
+      showToast('Email application opened in your email client', 'info');
+    }
   };
 
   return (
@@ -188,6 +196,9 @@ export default function OpportunityDetailPage() {
           </div>
 
           <div className="flex flex-wrap gap-3 mb-6">
+            {displayOpp.industry && displayOpp.industry !== 'General' && (
+              <span className={`text-xs px-3 py-1 rounded-full font-medium ${getTypeBadgeClass(displayOpp.industry)}`}>{getTypeLabel(displayOpp.industry)}</span>
+            )}
             <span className={`text-xs px-3 py-1 rounded-full font-medium ${getTypeBadgeClass(displayOpp.type)}`}>{getTypeLabel(displayOpp.type)}</span>
             {displayOpp.subtype && <span className="text-xs px-3 py-1 rounded-full font-medium bg-gray-100 text-gray-600">{displayOpp.subtype}</span>}
             {displayOpp.workplaceType && <span className="text-xs px-3 py-1 rounded-full font-medium bg-blue-50 text-blue-600"><i className="fas fa-building mr-1"></i>{displayOpp.workplaceType}</span>}
@@ -198,7 +209,7 @@ export default function OpportunityDetailPage() {
               { icon: 'fa-map-marker-alt', label: 'Location', value: oppLocation },
               { icon: 'fa-clock', label: 'Type', value: displayOpp.subtype || displayOpp.type },
               { icon: 'fa-briefcase', label: 'Experience', value: displayOpp.experience || 'N/A' },
-              { icon: 'fa-money-bill-wave', label: 'Salary', value: displayOpp.salary || 'Negotiable' },
+              { icon: 'fa-money-bill-wave', label: displayOpp.category === 'scholarship' || displayOpp.category === 'grant' ? 'Funding' : 'Salary', value: displayOpp.salary || (displayOpp.category === 'scholarship' || displayOpp.category === 'grant' ? 'See website' : 'Negotiable') },
             ].map(d => (
               <div key={d.label} className="p-4 rounded-xl bg-gray-50">
                 <i className={`fas ${d.icon} text-[#22c55e] text-sm mb-1`}></i>
@@ -258,14 +269,18 @@ export default function OpportunityDetailPage() {
           )}
 
           <button
-            onClick={handleApplyEmail}
+            onClick={handleApplyRedirect}
             className="w-full py-4 rounded-2xl accent-gradient text-white font-semibold text-lg hover:shadow-lg hover:shadow-[#22c55e]/25 transition-all flex items-center justify-center gap-2"
           >
-            <i className="fas fa-envelope"></i>
-            Apply via Email
+            <i className="fas fa-external-link-alt"></i>
+            {displayOpp.category === 'scholarship' || displayOpp.category === 'grant'
+              ? 'View Scholarship Website'
+              : 'Apply on Company Website'}
           </button>
           <p className="text-xs text-gray-400 text-center mt-2">
-            Your application will be sent via email with your details. Powered by SproutHR.
+            {(displayOpp.applicationUrl || displayOpp.url)
+              ? 'You will be redirected to the official application page.'
+              : 'Your application will be sent via email with your details. Powered by SproutHR.'}
           </p>
 
           {showApply && (

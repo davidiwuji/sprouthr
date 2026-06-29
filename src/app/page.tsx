@@ -63,7 +63,7 @@ function FeaturedOpportunities() {
               }} className="absolute top-4 right-4 text-gray-400 hover:text-[#22c55e] transition-colors">
                 <i className={`fas fa-heart ${state.bookmarks.includes(job.id) ? 'text-[#22c55e]' : ''}`}></i>
               </button>
-              <span className={`text-xs px-3 py-1 rounded-full font-medium ${getTypeBadgeClass('job')}`}>{getTypeLabel('job')}</span>
+              <span className={`text-xs px-3 py-1 rounded-full font-medium ${getTypeBadgeClass(job.category || 'job')}`}>{getTypeLabel(job.category || 'job')}</span>
               <div className="flex items-center gap-3 mt-4 mb-3">
                 <img src={job.company_logo || `https://ui-avatars.com/api/?name=${job.company}&background=22c55e&color=fff&bold=true`} alt={job.company} className="w-8 h-8 rounded-lg object-cover" />
                 <span className="text-sm text-gray-500">{job.company}</span>

@@ -229,7 +229,7 @@ export default function BrowsePage() {
                     }} className="absolute top-4 right-4 text-gray-400 hover:text-[#22c55e] transition-colors">
                       <i className={`fas fa-heart ${state.bookmarks.includes(opp.id) ? 'text-[#22c55e]' : ''}`}></i>
                     </button>
-                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${getTypeBadgeClass(opp.type)}`}>{getTypeLabel(opp.type)}</span>
+                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${getTypeBadgeClass(opp.industry)}`}>{getTypeLabel(opp.industry)}</span>
                     <div className="flex items-center gap-3 mt-3 mb-2">
                       <img src={opp.logo} alt={opp.company} className="w-8 h-8 rounded-lg object-cover" />
                       <span className="text-sm text-gray-500">{opp.company}</span>

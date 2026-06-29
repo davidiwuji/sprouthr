@@ -7,14 +7,13 @@ export default function EmployerPage() {
   return (
     <div className="page-transition min-h-screen flex items-center justify-center py-20 px-4">
       <div className="max-w-4xl mx-auto text-center">
-        {/* Landing-style image */}
-        <div className="relative mb-10 max-w-2xl mx-auto">
+        {/* Logo image */}
+        <div className="relative mb-10 max-w-xl mx-auto">
           <img
-            src="/Landing.png"
+            src="/Logo.png"
             alt="SPROUTHR Employers"
-            className="w-full h-auto rounded-3xl shadow-2xl"
+            className="w-full h-auto"
           />
-          <div className="absolute inset-0 rounded-3xl bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
         </div>
 
         {/* Coming Soon badge */}

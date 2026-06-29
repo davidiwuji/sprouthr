@@ -189,6 +189,9 @@ a {
 .badge-fellowship { background: rgba(245, 158, 11, 0.15); color: #d97706; }
 .badge-volunteer { background: rgba(239, 68, 68, 0.15); color: #dc2626; }
 .badge-graduate_program { background: rgba(147, 51, 234, 0.15); color: #7c3aed; }
+.badge-graduate { background: rgba(147, 51, 234, 0.15); color: #7c3aed; }
+.badge-bootcamp { background: rgba(59, 130, 246, 0.15); color: #2563eb; }
+.badge-grant { background: rgba(245, 158, 11, 0.15); color: #d97706; }
 
 /* Toast */
 @keyframes toastSlideIn {

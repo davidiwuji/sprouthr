@@ -41,13 +41,8 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div>
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-[#22c55e] flex items-center justify-center">
-                <i className="fas fa-seedling text-white text-sm"></i>
-              </div>
-              <span className="text-lg font-bold font-space" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                SPROUT<span className="text-[#22c55e]">HR</span>
-              </span>
+            <Link href="/" className="block mb-4">
+              <img src="/Logo.png" alt="SPROUTHR" className="h-16 w-auto" />
             </Link>
             <p className="text-sm text-gray-500 mb-4">Every Opportunity, One Platform. Discover your next career move with SPROUTHR.</p>
             <div className="flex gap-2 flex-wrap">
@@ -101,12 +96,20 @@ export default function Footer() {
               <li><Link href="/contact" className="text-sm text-gray-500 hover:text-[#22c55e] transition-colors">Contact</Link></li>
               <li><Link href="/for-employers" className="text-sm text-gray-500 hover:text-[#22c55e] transition-colors">For Employers</Link></li>
               <li><Link href="/careers" className="text-sm text-gray-500 hover:text-[#22c55e] transition-colors">Careers</Link></li>
+              <li><Link href="/privacy" className="text-sm text-gray-500 hover:text-[#22c55e] transition-colors">Privacy Policy</Link></li>
+              <li><Link href="/terms" className="text-sm text-gray-500 hover:text-[#22c55e] transition-colors">Terms &amp; Conditions</Link></li>
+              <li><Link href="/cookies" className="text-sm text-gray-500 hover:text-[#22c55e] transition-colors">Cookie Policy</Link></li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-gray-200 mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-gray-500">&copy; {currentYear} SPROUTHR. All rights reserved.</p>
+          <div className="flex items-center gap-4">
+            <Link href="/privacy" className="text-xs text-gray-400 hover:text-[#22c55e] transition-colors">Privacy</Link>
+            <Link href="/terms" className="text-xs text-gray-400 hover:text-[#22c55e] transition-colors">Terms</Link>
+            <Link href="/cookies" className="text-xs text-gray-400 hover:text-[#22c55e] transition-colors">Cookies</Link>
+          </div>
         </div>
       </div>
     </footer>
