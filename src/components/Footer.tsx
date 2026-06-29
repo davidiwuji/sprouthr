@@ -49,7 +49,7 @@ export default function Footer() {
               {[
                 { href: 'https://t.me/sprouthr', icon: 'fa-telegram', hoverColor: '#0088cc' },
                 { href: 'https://wa.me/message/YOUR_WA_LINK', icon: 'fa-whatsapp', hoverColor: '#25D366' },
-                { href: 'https://twitter.com', icon: 'fa-twitter' },
+                { href: 'https://x.com/sprouthrjobs', icon: 'fa-x-twitter', hoverColor: '#000000' },
                 { href: 'https://linkedin.com', icon: 'fa-linkedin-in' },
                 { href: 'https://instagram.com', icon: 'fa-instagram' },
               ].map(s => (

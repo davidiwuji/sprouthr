@@ -4,6 +4,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/lib/AppContext';
 import { fetchJobs, mapApiJobToOpportunity, mapJobToType, type ApiJob } from '@/data/jobsService';
 import { getTypeBadgeClass, getTypeLabel, daysUntil, timeAgo, formatLocation } from '@/lib/utils';
+import AdBanner from '@/components/AdBanner';
 import { useSearchParams } from 'next/navigation';
 
 export default function BrowsePage() {
@@ -200,7 +201,7 @@ export default function BrowsePage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {paginated.map((opp: any) => (
-                  <div key={opp.id} className="glass rounded-2xl p-6 card-hover cursor-pointer relative group" onClick={() => {
+                  <div key={opp.id} className="glass rounded-2xl p-6 card-hover cursor-pointer relative group w-full overflow-hidden" onClick={() => {
                     if (opp._apiUuid) {
                       navigateTo(`opportunity/${opp.id}?_apiUuid=${opp._apiUuid}`);
                     } else {
@@ -230,11 +231,11 @@ export default function BrowsePage() {
                       <i className={`fas fa-heart ${state.bookmarks.includes(opp.id) ? 'text-[#22c55e]' : ''}`}></i>
                     </button>
                     <span className={`text-xs px-3 py-1 rounded-full font-medium ${getTypeBadgeClass(opp.industry)}`}>{getTypeLabel(opp.industry)}</span>
-                    <div className="flex items-center gap-3 mt-3 mb-2">
-                      <img src={opp.logo} alt={opp.company} className="w-8 h-8 rounded-lg object-cover" />
-                      <span className="text-sm text-gray-500">{opp.company}</span>
+                    <div className="flex items-center gap-3 mt-3 mb-2 min-w-0">
+                      <img src={opp.logo} alt={opp.company} className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
+                      <span className="text-sm text-gray-500 truncate">{opp.company}</span>
                     </div>
-                    <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-[#22c55e] transition-colors">{opp.title}</h3>
+                    <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-[#22c55e] transition-colors break-words line-clamp-2">{opp.title}</h3>
                     <div className="flex items-center gap-3 text-xs text-gray-400 mb-3 flex-wrap">
                       <span><i className="fas fa-map-marker-alt mr-1"></i>{formatLocation(opp.location)}</span>
                       <span><i className="fas fa-clock mr-1"></i>{timeAgo(opp.postedDate)}</span>
@@ -272,6 +273,11 @@ export default function BrowsePage() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Ad banner below filters & results */}
+        <div className="mt-8">
+          <AdBanner variant="horizontal" />
         </div>
       </div>
     </div>

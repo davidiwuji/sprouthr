@@ -41,7 +41,7 @@ function FeaturedOpportunities() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {featuredJobs.map((job, i) => (
             <ScrollReveal3D key={job.id} delay={i * 150}>
-              <div className="glass rounded-2xl p-6 card-hover cursor-pointer relative group" onClick={() => navigateTo(`opportunity/${job.id}?_apiUuid=${job.id}`)}>
+              <div className="glass rounded-2xl p-6 card-hover cursor-pointer relative group w-full overflow-hidden" onClick={() => navigateTo(`opportunity/${job.id}?_apiUuid=${job.id}`)}>
               <button onClick={(e) => {
                 e.stopPropagation();
                 const wasBookmarked = state.bookmarks.includes(job.id);
@@ -64,11 +64,11 @@ function FeaturedOpportunities() {
                 <i className={`fas fa-heart ${state.bookmarks.includes(job.id) ? 'text-[#22c55e]' : ''}`}></i>
               </button>
               <span className={`text-xs px-3 py-1 rounded-full font-medium ${getTypeBadgeClass(job.category || 'job')}`}>{getTypeLabel(job.category || 'job')}</span>
-              <div className="flex items-center gap-3 mt-4 mb-3">
-                <img src={job.company_logo || `https://ui-avatars.com/api/?name=${job.company}&background=22c55e&color=fff&bold=true`} alt={job.company} className="w-8 h-8 rounded-lg object-cover" />
-                <span className="text-sm text-gray-500">{job.company}</span>
+              <div className="flex items-center gap-3 mt-4 mb-3 min-w-0">
+                <img src={job.company_logo || `https://ui-avatars.com/api/?name=${job.company}&background=22c55e&color=fff&bold=true`} alt={job.company} className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
+                <span className="text-sm text-gray-500 truncate">{job.company}</span>
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-[#22c55e] transition-colors">{job.title}</h3>
+              <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-[#22c55e] transition-colors break-words line-clamp-2">{job.title}</h3>
               <div className="flex items-center gap-3 text-xs text-gray-400 mb-3">
                 <span><i className="fas fa-map-marker-alt mr-1"></i>{job.location || 'Nigeria'}</span>
                 <span><i className="fas fa-clock mr-1"></i>{job.created_at ? timeAgo(job.created_at) : 'Recent'}</span>
@@ -161,15 +161,15 @@ function ClosingSoonSection() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
           {closingJobs.map((job, i) => (
             <ScrollReveal3D key={job.id} delay={i * 150}>
-              <div className="bg-white rounded-2xl p-6 card-hover cursor-pointer border-l-4 border-l-[#ef4444]" onClick={() => navigateTo(`opportunity/${job.id}?_apiUuid=${job.id}`)}>
-                <div className="flex items-center gap-3 mb-3">
-                  <img src={job.company_logo || `https://ui-avatars.com/api/?name=${job.company}&background=22c55e&color=fff&bold=true`} alt="" className="w-10 h-10 rounded-xl object-cover" />
-                  <div>
-                    <h3 className="font-semibold text-gray-900 text-sm">{job.title}</h3>
-                    <p className="text-xs text-gray-400">{job.company || 'Unknown Company'}</p>
+              <div className="bg-white rounded-2xl p-6 card-hover cursor-pointer border-l-4 border-l-[#ef4444] w-full overflow-hidden" onClick={() => navigateTo(`opportunity/${job.id}?_apiUuid=${job.id}`)}>
+                <div className="flex items-center gap-3 mb-3 min-w-0">
+                  <img src={job.company_logo || `https://ui-avatars.com/api/?name=${job.company}&background=22c55e&color=fff&bold=true`} alt="" className="w-10 h-10 rounded-xl object-cover flex-shrink-0" />
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-gray-900 text-sm break-words line-clamp-2">{job.title}</h3>
+                    <p className="text-xs text-gray-400 truncate">{job.company || 'Unknown Company'}</p>
                   </div>
                 </div>
-                <div className="flex items-center justify-between text-xs text-gray-400">
+                <div className="flex items-center justify-between text-xs text-gray-400 flex-wrap gap-1">
                   <span><i className="fas fa-map-marker-alt mr-1"></i>{job.location || 'Nigeria'}</span>
                   {job.deadline ? (
                     <span className="font-medium text-[#ef4444]">

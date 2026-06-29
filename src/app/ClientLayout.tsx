@@ -15,10 +15,11 @@ const LANDING_PAGE = '/';
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isLanding = pathname === LANDING_PAGE;
+  const isBrowse = pathname === '/browse';
   const noAds = NO_AD_PAGES.some(p => pathname?.startsWith(p));
   const showAds = !noAds;
-  const showLandscape = showAds && !isLanding;      // no top landscape on landing (keep hero clean)
-  const showLeftSide = showAds && !isLanding;        // left ads disturb the landing image
+  const showLandscape = showAds && !isLanding && !isBrowse;      // no top landscape on landing or browse (browse has its own ad placement)
+  const showLeftSide = showAds && !isLanding && !isBrowse;        // left ads disturb the landing image and browse layout
   const showRightSide = showAds;                     // right ads ok everywhere
 
   return (
