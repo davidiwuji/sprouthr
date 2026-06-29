@@ -1,0 +1,9 @@
+▲ Next.js 16.2.9 (webpack)
+- Local:         http://localhost:3001
+- Network:       http://172.20.10.2:3001
+- Environments: .env.local
+✓ Ready in 1209ms
+⚠ Attempted to load @next/swc-win32-x64-msvc, but an error occurred: \\?\F:\Double X\sprouthr\node_modules\@next\swc-win32-x64-msvc\next-swc.win32-x64-msvc.node is not a valid Win32 application.
+\\?\F:\Double X\sprouthr\node_modules\@next\swc-win32-x64-msvc\next-swc.win32-x64-msvc.node
+  Skipping creating a lockfile at F:\Double X\sprouthr\.next\dev\lock because we're using WASM bindings
+
