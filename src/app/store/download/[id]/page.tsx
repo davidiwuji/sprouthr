@@ -145,7 +145,7 @@ export default function StoreDownloadPage() {
               <p className="text-sm text-gray-500">
                 If you have trouble downloading, email{' '}
                 <a href="mailto:sproutrh.ng@gmail.com" className="text-[#22c55e] hover:underline">sproutrh.ng@gmail.com</a>
-                {' '}with your order details. Download links expire after 1 hour — request a new download if your link has expired.
+                {' '}with your order details. Download links expire after 10 minutes — request a new download if your link has expired.
               </p>
             </div>
 

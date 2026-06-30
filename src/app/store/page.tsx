@@ -6,24 +6,13 @@ import { storeProducts, categoryConfig, type StoreCategory } from '@/data/store'
 import Link from 'next/link';
 
 export default function StorePage() {
-  const { navigateTo, state } = useApp();
+  const { state } = useApp();
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [search, setSearch] = useState('');
 
   const categoryOrder: (StoreCategory | 'all')[] = [
-    'all',
-    'federal-govt',
-    'military',
-    'oil-gas',
-    'teaching',
-    'banking',
-    'graduate',
-    'medical',
-    'private',
-    'engineering',
-    'general',
-    'cv-service',
-    'mentorship',
+    'all', 'federal-govt', 'military', 'oil-gas', 'teaching', 'banking',
+    'graduate', 'medical', 'private', 'engineering', 'general', 'cv-service', 'mentorship',
   ];
   const categories = categoryOrder.filter(c => c === 'all' || storeProducts.some(p => p.category === c));
 
@@ -35,30 +24,7 @@ export default function StorePage() {
   });
 
   const [expandedFeatures, setExpandedFeatures] = useState<Set<number>>(new Set());
-  const [requestingId, setRequestingId] = useState<number | null>(null);
-  const [requestMessage, setRequestMessage] = useState<{ id: number; text: string; success: boolean } | null>(null);
-
-  const handleRequestFile = async (productId: number) => {
-    if (requestingId) return;
-    setRequestingId(productId);
-    setRequestMessage(null);
-    try {
-      const res = await fetch('/api/store/request-file', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId }),
-      });
-      const data = await res.json();
-      setRequestMessage({ id: productId, text: data.error || data.message, success: data.success });
-      if (data.downloadPageUrl) {
-        window.open(data.downloadPageUrl, '_blank');
-      }
-    } catch {
-      setRequestMessage({ id: productId, text: 'Network error — try again.', success: false });
-    } finally {
-      setRequestingId(null);
-    }
-  };
+  const [purchasing, setPurchasing] = useState<{ productId: number; step: 'thanks' | 'sending' | 'sent' | 'error'; message?: string } | null>(null);
 
   const toggleFeatures = (id: number) => {
     setExpandedFeatures(prev => {
@@ -68,6 +34,40 @@ export default function StorePage() {
       return next;
     });
   };
+
+  const handlePurchase = (productId: number) => {
+    setPurchasing({ productId, step: 'thanks' });
+  };
+
+  const handleContinue = async () => {
+    if (!purchasing) return;
+    setPurchasing({ ...purchasing, step: 'sending' });
+
+    try {
+      const res = await fetch('/api/store/request-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: purchasing.productId }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Open the direct signed URL if available (10-min link)
+        if (data.signedUrl) {
+          window.open(data.signedUrl, '_blank');
+        } else if (data.downloadPageUrl) {
+          window.open(data.downloadPageUrl, '_blank');
+        }
+        setPurchasing({ ...purchasing, step: 'sent', message: data.message });
+      } else {
+        setPurchasing({ ...purchasing, step: 'error', message: data.error || 'Something went wrong' });
+      }
+    } catch (err: any) {
+      setPurchasing({ ...purchasing, step: 'error', message: err?.message || 'Network error — try again.' });
+    }
+  };
+
+  const currentProduct = purchasing ? storeProducts.find(p => p.id === purchasing.productId) : null;
 
   return (
     <div className="page-transition min-h-screen pt-8">
@@ -181,41 +181,141 @@ export default function StorePage() {
                 </div>
 
                 <button
-                  onClick={() => navigateTo(state.user ? 'checkout' : 'auth/signup')}
-                  className="w-full mt-4 py-2.5 rounded-xl text-white text-sm font-medium transition-all" style={{ backgroundColor: catCfg?.color || '#22c55e' }}
+                  onClick={() => state.user ? handlePurchase(product.id) : window.location.href = '/auth/signup'}
+                  className="block w-full mt-4 py-2.5 rounded-xl text-white text-sm font-medium text-center transition-all"
+                  style={{ backgroundColor: catCfg?.color || '#22c55e' }}
                   onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
                   onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                 >
-                  {state.user ? 'Purchase Now' : 'Sign in to Purchase'}
+                  {state.user ? 'Purchase' : 'Sign in to Purchase'}
                 </button>
-
-                {state.user && (
-                  <div className="mt-2">
-                    <button
-                      onClick={() => handleRequestFile(product.id)}
-                      disabled={requestingId === product.id}
-                      className="w-full py-2 rounded-xl text-sm font-medium transition-all border border-[#22c55e] text-[#22c55e] bg-white hover:bg-[#F0FDF4] disabled:opacity-50"
-                    >
-                      {requestingId === product.id ? (
-                        <><i className="fas fa-spinner fa-spin mr-2"></i>Sending...</>
-                      ) : (
-                        <><i className="fas fa-envelope mr-2"></i>Request File via Email</>
-                      )}
-                    </button>
-                    {requestMessage && requestMessage.id === product.id && (
-                      <p className={`text-xs mt-1 ${requestMessage.success ? 'text-green-600' : 'text-red-500'}`}>
-                        <i className={`fas ${requestMessage.success ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-1`}></i>
-                        {requestMessage.text}
-                      </p>
-                    )}
-                  </div>
-                )}
               </div>
               );
             })}
           </div>
         )}
       </div>
+
+      {/* ─── BIG MODAL ─── */}
+      {purchasing && currentProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setPurchasing(null)}>
+          <div
+            className="bg-white rounded-3xl shadow-2xl max-w-md w-full mx-4 p-10 text-center relative animate-in"
+            onClick={e => e.stopPropagation()}
+            style={{ animation: 'fadeInUp 0.3s ease-out' }}
+          >
+            {/* Step 1: Thanks */}
+            {purchasing.step === 'thanks' && (
+              <>
+                <div className="w-24 h-24 rounded-full bg-[#22c55e]/10 flex items-center justify-center mx-auto mb-6">
+                  <i className="fas fa-check text-5xl text-[#22c55e]"></i>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2 font-space" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                  🎉 Thanks for Purchasing!
+                </h2>
+                <p className="text-gray-500 mb-1">
+                  You just purchased:
+                </p>
+                <p className="font-semibold text-gray-800 text-lg mb-6">
+                  {currentProduct.title}
+                </p>
+                <button
+                  onClick={handleContinue}
+                  className="w-full py-3 rounded-xl text-white text-base font-semibold transition-all bg-[#22c55e] hover:bg-[#16a34a]"
+                >
+                  Continue →
+                </button>
+                <p className="text-xs text-gray-400 mt-3">We'll send the file to your email</p>
+              </>
+            )}
+
+            {/* Step 2: Sending */}
+            {purchasing.step === 'sending' && (
+              <>
+                <div className="w-24 h-24 rounded-full bg-[#22c55e]/10 flex items-center justify-center mx-auto mb-6">
+                  <i className="fas fa-spinner fa-spin text-5xl text-[#22c55e]"></i>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2 font-space" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                  Sending to your email...
+                </h2>
+                <p className="text-gray-500">Please wait while we process your request.</p>
+              </>
+            )}
+
+            {/* Error step */}
+            {purchasing.step === 'error' && (
+              <>
+                <div className="w-24 h-24 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-6">
+                  <i className="fas fa-exclamation-triangle text-5xl text-red-500"></i>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2 font-space" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                  Something went wrong
+                </h2>
+                <p className="text-red-500 bg-red-50 rounded-xl p-3 text-sm mb-6">
+                  {purchasing.message || 'An unknown error occurred.'}
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setPurchasing(null)}
+                    className="flex-1 py-3 rounded-xl border border-gray-300 text-gray-700 text-base font-medium hover:bg-gray-50"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={handleContinue}
+                    className="flex-1 py-3 rounded-xl text-white text-base font-semibold bg-[#22c55e] hover:bg-[#16a34a]"
+                  >
+                    Try Again
+                  </button>
+                </div>
+                <details className="mt-4 text-left">
+                  <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600">Troubleshooting tips</summary>
+                  <ul className="text-xs text-gray-500 mt-2 space-y-1 list-disc pl-4">
+                    <li>Are you testing on <strong>localhost</strong>? Make sure the dev server is running (<code>npm run dev --webpack</code>)</li>
+                    <li>Are you testing on <strong>Vercel</strong>? Add <code>SMTP_USER</code> and <code>SMTP_PASS</code> in Vercel Dashboard → Environment Variables</li>
+                    <li>Check that your Gmail App Password is correct (16 characters, no spaces)</li>
+                    <li>Your download is still available directly: <a href={`/store/download/${purchasing.productId}`} className="text-[#22c55e] underline">open download page</a></li>
+                  </ul>
+                </details>
+              </>
+            )}
+
+            {/* Step 3: Sent */}
+            {purchasing.step === 'sent' && (
+              <>
+                <div className="w-24 h-24 rounded-full bg-[#22c55e]/10 flex items-center justify-center mx-auto mb-6">
+                  <i className="fas fa-envelope-open-text text-5xl text-[#22c55e]"></i>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2 font-space" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                  📬 Check Your Inbox!
+                </h2>
+                <p className="text-gray-500 bg-gray-50 rounded-xl p-3 text-sm mb-6">
+                  {purchasing.message || 'Your file has been sent to your email.'}
+                </p>
+                <a
+                  href={`/store/download/${purchasing.productId}`}
+                  className="block w-full py-3 rounded-xl text-center text-white text-base font-semibold transition-all bg-[#22c55e] hover:bg-[#16a34a] mb-2"
+                >
+                  Open Download Page
+                </a>
+                <button
+                  onClick={() => setPurchasing(null)}
+                  className="w-full py-2 text-sm text-gray-500 hover:text-gray-700"
+                >
+                  Done
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      <style jsx>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(24px) scale(0.95); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
     </div>
   );
 }

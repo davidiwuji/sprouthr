@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
           dbFiles.map(async (row) => {
             const { data, error } = await supabase.storage
               .from(bucketName)
-              .createSignedUrl(row.storage_path, 60 * 60); // 1 hour
+              .createSignedUrl(row.storage_path, 60 * 10); // 10 minutes
 
             if (error || !data?.signedUrl) {
               console.warn(`Signed URL failed for ${row.storage_path}:`, error?.message);
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
             const displayName = row.file_name
               .replace(/\.pdf$/i, '')
               .replace(/-/g, ' ')
-              .replace(/\b\w/g, c => c.toUpperCase());
+              .replace(/\b\w/g, (c: string) => c.toUpperCase());
 
             return { name: displayName, url: data.signedUrl, path: row.storage_path };
           })
@@ -74,11 +74,11 @@ export async function GET(request: NextRequest) {
             const displayName = fileName
               .replace(/\.pdf$/i, '')
               .replace(/-/g, ' ')
-              .replace(/\b\w/g, c => c.toUpperCase());
+              .replace(/\b\w/g, (c: string) => c.toUpperCase());
 
             const { data, error } = await supabase.storage
               .from(bucketName)
-              .createSignedUrl(storagePath, 60 * 60);
+              .createSignedUrl(storagePath, 60 * 10); // 10 minutes
 
             if (error || !data?.signedUrl) return null;
             return { name: displayName, url: data.signedUrl, path: storagePath };

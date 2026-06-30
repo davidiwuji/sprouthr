@@ -322,7 +322,7 @@ export const storeProducts: StoreProduct[] = [
     price: '₦4,000',
     features: ['Zenith Bank test format', 'Numerical reasoning tests', 'Verbal reasoning section', 'Interview guide', 'Instant download'],
     delivery: 'Sent to your email', format: 'PDF', fileUrls: ['/store-files/zenith-past-questions.pdf'],
-    storagePaths: ['store-files/35/ZENITH-BANK-PAST-QUESTIONS-ANSWERS.pdf'],
+    storagePaths: ['ZENITH-BANK-PAST-QUESTIONS-ANSWERS.pdf'],
   },
   {
     id: 36, title: 'UBA Graduate Trainee Past Questions', category: 'banking',
