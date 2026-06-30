@@ -138,15 +138,14 @@ export default function BrowsePage() {
           </button>
         </div>
 
-        <div className="flex gap-6">
-          {/* Filters sidebar */}
-          <div className={`md:block w-64 flex-shrink-0 ${mobileFilters ? 'fixed inset-0 z-50 p-4 pt-16 bg-[#f0f2f5] overflow-y-auto' : 'hidden'}`}>
+        {/* Mobile filter overlay — separate from the layout */}
+        {mobileFilters && (
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-[#f0f2f5] p-4 pt-16 md:hidden">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900 text-lg">Filters</h3>
+              <button onClick={() => setMobileFilters(false)} className="text-gray-400 hover:text-gray-900 p-2"><i className="fas fa-times text-xl"></i></button>
+            </div>
             <div className="glass rounded-2xl p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900">Filters</h3>
-                <button onClick={() => setMobileFilters(false)} className="md:hidden text-gray-400 hover:text-gray-900"><i className="fas fa-times"></i></button>
-              </div>
-
               <div className="space-y-6">
                 {filterOptions.map(section => (
                   <div key={section.key}>
@@ -166,15 +165,46 @@ export default function BrowsePage() {
                   </div>
                 ))}
               </div>
-
               <button onClick={() => { setFilters({ category: [], experience: [], workplace: [], deadline: [] }); setMobileFilters(false); }} className="w-full mt-6 py-2.5 rounded-xl text-sm text-gray-500 hover:text-gray-900 border border-gray-200 hover:border-gray-300 transition-colors">
+                Clear All Filters
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Desktop layout: row on md+, column on mobile */}
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+          {/* Desktop sidebar only */}
+          <div className="hidden md:block w-64 flex-shrink-0">
+            <div className="glass rounded-2xl p-5">
+              <h3 className="font-semibold text-gray-900 mb-4">Filters</h3>
+              <div className="space-y-6">
+                {filterOptions.map(section => (
+                  <div key={section.key}>
+                    <h4 className="text-sm font-medium text-gray-900 mb-3">{section.title}</h4>
+                    <div className="space-y-2 max-h-40 overflow-y-auto filter-scroll">
+                      {section.options.map((opt: any) => {
+                        const val = typeof opt === 'string' ? opt : opt.value;
+                        const label = typeof opt === 'string' ? opt.replace('_', ' ') : opt.label;
+                        return (
+                          <label key={val} className="flex items-center gap-2 cursor-pointer group">
+                            <input type="checkbox" checked={(filters[section.key] as string[]).includes(val)} onChange={() => toggleFilter(section.key, val)} className="w-4 h-4 rounded border-gray-200 bg-white accent-[#22c55e]" />
+                            <span className="text-sm text-gray-500 group-hover:text-gray-900 capitalize">{label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => setFilters({ category: [], experience: [], workplace: [], deadline: [] })} className="w-full mt-6 py-2.5 rounded-xl text-sm text-gray-500 hover:text-gray-900 border border-gray-200 hover:border-gray-300 transition-colors">
                 Clear All Filters
               </button>
             </div>
           </div>
 
           {/* Results */}
-          <div className="flex-1">
+          <div className="w-full min-w-0 max-w-full">
             <div className="flex flex-col sm:flex-row gap-3 mb-6">
               <div className="flex-1 relative">
                 <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
@@ -199,9 +229,9 @@ export default function BrowsePage() {
                 <p className="text-gray-400 text-sm">Check back later for new postings</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 {paginated.map((opp: any) => (
-                  <div key={opp.id} className="glass rounded-2xl p-6 card-hover cursor-pointer relative group w-full overflow-hidden" onClick={() => {
+                  <div key={opp.id} className="glass rounded-2xl p-3 sm:p-5 card-hover cursor-pointer relative group w-full overflow-hidden" onClick={() => {
                     if (opp._apiUuid) {
                       navigateTo(`opportunity/${opp.id}?_apiUuid=${opp._apiUuid}`);
                     } else {
@@ -238,19 +268,26 @@ export default function BrowsePage() {
                     <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-[#22c55e] transition-colors break-words line-clamp-2">{opp.title}</h3>
                     <div className="flex items-center gap-3 text-xs text-gray-400 mb-3 flex-wrap">
                       <span><i className="fas fa-map-marker-alt mr-1"></i>{formatLocation(opp.location)}</span>
+                      {opp.salary && opp.salary !== 'Negotiable' && opp.salary !== 'See website' && opp.salary !== 'Funding' && (
+                        <span className="text-xs font-medium text-gray-500"><i className="fas fa-money-bill-wave mr-1"></i>{opp.salary}</span>
+                      )}
                       <span><i className="fas fa-clock mr-1"></i>{timeAgo(opp.postedDate)}</span>
                       {opp.deadline && daysUntil(opp.deadline) <= 30 && <span>{daysUntil(opp.deadline)}d left</span>}
                       {opp.deadline && daysUntil(opp.deadline) > 30 && <span className="text-[#22c55e]">Open</span>}
                     </div>
-                    <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-200">
-                      <span className="text-xs text-gray-500 capitalize">{opp.subtype || opp.type}</span>
+                    <div className="flex items-center justify-between flex-wrap gap-2 pt-3 mt-3 border-t border-gray-200">
+                      <span className="text-xs text-gray-500 capitalize truncate">{opp.subtype || opp.type}</span>
                       {opp.applicationUrl && (
-                        <a href={opp.applicationUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-xs font-medium text-[#22c55e] hover:underline">
-                          Apply Now <i className="fas fa-external-link-alt ml-1"></i>
+                        <a href={opp.applicationUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
+                          style={{ background: 'linear-gradient(135deg, #22c55e, #4ade80)', color: '#fff' }}>
+                          Apply Now <i className="fas fa-external-link-alt text-[10px]"></i>
                         </a>
                       )}
                       {!opp.applicationUrl && (
-                        <span className="text-xs font-medium text-[#22c55e]">View Details <i className="fas fa-arrow-right ml-1"></i></span>
+                        <span className="text-xs font-medium text-[#22c55e] flex items-center gap-1 whitespace-nowrap">
+                          View Details <i className="fas fa-arrow-right text-[10px]"></i>
+                        </span>
                       )}
                     </div>
                   </div>

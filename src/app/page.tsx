@@ -69,8 +69,11 @@ function FeaturedOpportunities() {
                 <span className="text-sm text-gray-500 truncate">{job.company}</span>
               </div>
               <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-[#22c55e] transition-colors break-words line-clamp-2">{job.title}</h3>
-              <div className="flex items-center gap-3 text-xs text-gray-400 mb-3">
+              <div className="flex items-center gap-3 text-xs text-gray-400 mb-3 flex-wrap">
                 <span><i className="fas fa-map-marker-alt mr-1"></i>{job.location || 'Nigeria'}</span>
+                {job.salary && job.salary !== 'Negotiable' && job.salary !== 'See website' && job.salary !== 'Funding' && (
+                  <span className="text-xs font-medium text-gray-500"><i className="fas fa-money-bill-wave mr-1"></i>{job.salary}</span>
+                )}
                 <span><i className="fas fa-clock mr-1"></i>{job.created_at ? timeAgo(job.created_at) : 'Recent'}</span>
               </div>
               <div className="flex items-center justify-between pt-3 border-t border-gray-200">
@@ -171,6 +174,9 @@ function ClosingSoonSection() {
                 </div>
                 <div className="flex items-center justify-between text-xs text-gray-400 flex-wrap gap-1">
                   <span><i className="fas fa-map-marker-alt mr-1"></i>{job.location || 'Nigeria'}</span>
+                  {job.salary && job.salary !== 'Negotiable' && job.salary !== 'See website' && job.salary !== 'Funding' && (
+                    <span className="text-xs font-medium text-gray-500"><i className="fas fa-money-bill-wave mr-1"></i>{job.salary}</span>
+                  )}
                   {job.deadline ? (
                     <span className="font-medium text-[#ef4444]">
                       <i className="fas fa-hourglass-half mr-1"></i>
