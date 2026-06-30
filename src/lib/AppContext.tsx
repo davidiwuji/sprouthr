@@ -237,10 +237,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   if (!initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f0f2f5]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-[#22c55e] flex items-center justify-center animate-pulse">
-            <i className="fas fa-seedling text-white"></i>
-          </div>
+        <div className="flex flex-col items-center gap-4">
+          <img src="/Logo.png" alt="SproutHR" className="h-16 w-auto animate-pulse" />
           <span className="text-sm text-gray-400">Loading...</span>
         </div>
       </div>

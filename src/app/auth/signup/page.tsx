@@ -63,8 +63,6 @@ export default function SignUpPage() {
   }, [state.user, state.loading, router]);
 
   const [loading, setLoading] = useState(false);
-  const [checkingEmail, setCheckingEmail] = useState(false);
-  const [emailTaken, setEmailTaken] = useState(false);
   const [form, setForm] = useState({
     fullName: '',
     email: '',
@@ -73,6 +71,7 @@ export default function SignUpPage() {
     state: '',
     careerField: '',
     telegram: '',
+    linkedin: '',
     password: '',
     confirmPassword: '',
     role: 'jobseeker',
@@ -85,55 +84,11 @@ export default function SignUpPage() {
     setForm(prev => ({ ...prev, [target.name]: value }));
   };
 
-  const checkEmailAvailability = async (email: string) => {
-    if (!email || !email.includes('@')) return;
-    setCheckingEmail(true);
-    setEmailTaken(false);
-    try {
-      const supabase = createClient();
-      // Try to sign in with the email — if it returns "Invalid login credentials"
-      // the email exists. If "Email not confirmed" or similar, it also exists.
-      const { error } = await supabase.auth.signInWithOtp({ email });
-      // If no error, the OTP was sent = email exists in the system
-      // Actually, signInWithOtp always sends an OTP if the email exists in the system
-      // A better approach: use admin API to check
-      
-      // Use the list users approach via the sign-up error
-      const { error: signUpError } = await supabase.auth.admin.listUsers();
-      // That won't work without service_role key
-      
-      // Best approach: try to see if we get a specific error
-      // Actually, we can check by attempting to get user by email
-      // via the signUp function with a fake password
-      const { data, error: checkError } = await supabase.auth.signUp({
-        email,
-        password: 'checking_12345',
-      });
-      
-      if (checkError && (checkError.message.toLowerCase().includes('already') || 
-          checkError.message.toLowerCase().includes('exists') ||
-          checkError.message.toLowerCase().includes('registered'))) {
-        setEmailTaken(true);
-      } else if (data?.user?.identities?.length === 0) {
-        // User already exists but not confirmed
-        setEmailTaken(true);
-      }
-    } catch (err) {
-      // Silently fail — don't block registration
-    }
-    setCheckingEmail(false);
-  };
-
-  const handleEmailBlur = () => {
-    if (form.email) checkEmailAvailability(form.email);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!form.fullName.trim()) { showToast('Please enter your full name', 'error'); return; }
     if (!form.email.trim()) { showToast('Please enter your email', 'error'); return; }
-    if (emailTaken) { showToast('This email is already registered. Please sign in instead.', 'error'); return; }
     if (!form.phone.trim()) { showToast('Please enter your phone number', 'error'); return; }
     if (!form.country) { showToast('Please select your country', 'error'); return; }
     if (form.country === 'Nigeria' && !form.state) { showToast('Please select your state', 'error'); return; }
@@ -154,6 +109,7 @@ export default function SignUpPage() {
         email: form.email,
         password: form.password,
         options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
             full_name: form.fullName,
             phone: form.phone,
@@ -162,6 +118,7 @@ export default function SignUpPage() {
             state: form.state,
             career_field: form.careerField,
             telegram: form.telegram,
+            linkedin: form.linkedin,
             role: form.role,
           },
         },
@@ -177,8 +134,8 @@ export default function SignUpPage() {
         return;
       }
 
-      showToast('Account created! Check your email to verify.', 'success');
-      setTimeout(() => router.push('/'), 2000);
+      showToast('Account created! Check your email for the confirmation link, then sign in.', 'success');
+      setTimeout(() => router.push('/auth/login'), 3000);
     } catch (err) {
       showToast('An unexpected error occurred', 'error');
       setLoading(false);
@@ -190,7 +147,7 @@ export default function SignUpPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <img src="/Logo.png" alt="SproutHR" className="h-12 w-auto" />
+            <img src="/Logo.png" alt="SproutHR" className="h-20 w-auto" />
           </Link>
           <h1 className="text-2xl font-bold text-gray-900">Create your account</h1>
           <p className="text-gray-500 mt-2">Join thousands of professionals on SproutHR</p>
@@ -204,20 +161,10 @@ export default function SignUpPage() {
               <input name="fullName" value={form.fullName} onChange={handleChange} placeholder="John Doe" required className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e] transition-colors" />
             </div>
 
-            {/* Email with availability check */}
+            {/* Email */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
-              <div className="relative">
-                <input name="email" type="email" value={form.email} onChange={handleChange} onBlur={handleEmailBlur} placeholder="john@email.com" required className={`w-full px-4 py-3 rounded-xl bg-white border text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 transition-colors ${emailTaken ? 'border-red-400 focus:border-red-500 focus:ring-red-500' : 'border-gray-200 focus:border-[#22c55e] focus:ring-[#22c55e]'}`} />
-                {checkingEmail && <i className="fas fa-spinner fa-spin absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"></i>}
-                {emailTaken && !checkingEmail && <i className="fas fa-exclamation-circle absolute right-4 top-1/2 -translate-y-1/2 text-red-500"></i>}
-              </div>
-              {emailTaken && (
-                <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
-                  <i className="fas fa-info-circle"></i> This email is already registered.{' '}
-                  <Link href="/auth/login" className="text-[#22c55e] font-medium hover:underline">Sign in</Link>
-                </p>
-              )}
+              <input name="email" type="email" value={form.email} onChange={handleChange} placeholder="john@email.com" required className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e] transition-colors" />
             </div>
 
             {/* Phone */}
@@ -258,6 +205,12 @@ export default function SignUpPage() {
               <input name="telegram" value={form.telegram} onChange={handleChange} placeholder="@yourusername" className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e] transition-colors" />
             </div>
 
+            {/* LinkedIn (optional) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">LinkedIn Profile URL <span className="text-gray-400 font-normal">(optional)</span></label>
+              <input name="linkedin" type="url" value={form.linkedin} onChange={handleChange} placeholder="https://linkedin.com/in/yourprofile" className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e] transition-colors" />
+            </div>
+
             {/* Password + Confirm */}
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -286,7 +239,7 @@ export default function SignUpPage() {
             </div>
 
             {/* Submit */}
-            <button type="submit" disabled={loading || emailTaken} className="w-full py-3.5 rounded-xl accent-gradient text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-60 flex items-center justify-center gap-2">
+            <button type="submit" disabled={loading} className="w-full py-3.5 rounded-xl accent-gradient text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-60 flex items-center justify-center gap-2">
               {loading ? <><i className="fas fa-spinner fa-spin"></i> Creating...</> : <><i className="fas fa-user-plus"></i> Create Account</>}
             </button>
           </form>
