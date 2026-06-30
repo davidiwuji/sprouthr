@@ -35,6 +35,30 @@ export default function StorePage() {
   });
 
   const [expandedFeatures, setExpandedFeatures] = useState<Set<number>>(new Set());
+  const [requestingId, setRequestingId] = useState<number | null>(null);
+  const [requestMessage, setRequestMessage] = useState<{ id: number; text: string; success: boolean } | null>(null);
+
+  const handleRequestFile = async (productId: number) => {
+    if (requestingId) return;
+    setRequestingId(productId);
+    setRequestMessage(null);
+    try {
+      const res = await fetch('/api/store/request-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId }),
+      });
+      const data = await res.json();
+      setRequestMessage({ id: productId, text: data.error || data.message, success: data.success });
+      if (data.downloadPageUrl) {
+        window.open(data.downloadPageUrl, '_blank');
+      }
+    } catch {
+      setRequestMessage({ id: productId, text: 'Network error — try again.', success: false });
+    } finally {
+      setRequestingId(null);
+    }
+  };
 
   const toggleFeatures = (id: number) => {
     setExpandedFeatures(prev => {
@@ -164,6 +188,28 @@ export default function StorePage() {
                 >
                   {state.user ? 'Purchase Now' : 'Sign in to Purchase'}
                 </button>
+
+                {state.user && (
+                  <div className="mt-2">
+                    <button
+                      onClick={() => handleRequestFile(product.id)}
+                      disabled={requestingId === product.id}
+                      className="w-full py-2 rounded-xl text-sm font-medium transition-all border border-[#22c55e] text-[#22c55e] bg-white hover:bg-[#F0FDF4] disabled:opacity-50"
+                    >
+                      {requestingId === product.id ? (
+                        <><i className="fas fa-spinner fa-spin mr-2"></i>Sending...</>
+                      ) : (
+                        <><i className="fas fa-envelope mr-2"></i>Request File via Email</>
+                      )}
+                    </button>
+                    {requestMessage && requestMessage.id === product.id && (
+                      <p className={`text-xs mt-1 ${requestMessage.success ? 'text-green-600' : 'text-red-500'}`}>
+                        <i className={`fas ${requestMessage.success ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-1`}></i>
+                        {requestMessage.text}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
               );
             })}
