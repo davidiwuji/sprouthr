@@ -56,6 +56,7 @@ export default function AdminPage() {
   const [jobsLoading, setJobsLoading] = useState(true);
   const [jobsPage, setJobsPage] = useState(1);
   const [jobsSearch, setJobsSearch] = useState('');
+  const [scanningDeadlines, setScanningDeadlines] = useState(false);
   const jobsPerPage = 20;
 
   // Users
@@ -151,6 +152,26 @@ export default function AdminPage() {
       showToast('Failed to load jobs', 'error');
     } finally {
       setJobsLoading(false);
+    }
+  };
+
+  const scanDeadlines = async () => {
+    setScanningDeadlines(true);
+    try {
+      const res = await fetch('/api/admin/fix-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'extract_all_deadlines' }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      showToast(`Scanned ${data.scanned} jobs → extracted ${data.extracted} deadlines`, 'success');
+      // Reload current page
+      loadJobs(jobsPage, jobsSearch);
+    } catch (err: any) {
+      showToast(err.message, 'error');
+    } finally {
+      setScanningDeadlines(false);
     }
   };
 
@@ -387,6 +408,18 @@ export default function AdminPage() {
                 <button onClick={() => { setJobsSearch(''); setJobsPage(1); loadJobs(1, ''); }} className="px-4 py-2.5 rounded-xl bg-gray-100 text-gray-600 text-sm hover:bg-gray-200 whitespace-nowrap">
                   <i className="fas fa-rotate"></i>
                 </button>
+                <button
+                  onClick={scanDeadlines}
+                  disabled={scanningDeadlines}
+                  className="px-4 py-2.5 rounded-xl bg-red-50 text-red-600 text-sm hover:bg-red-100 whitespace-nowrap transition-colors disabled:opacity-50"
+                  title="Scan job descriptions for deadline dates"
+                >
+                  {scanningDeadlines ? (
+                    <><i className="fas fa-spinner fa-spin mr-1"></i> Scanning...</>
+                  ) : (
+                    <><i className="fas fa-calendar-check mr-1"></i> Extract Deadlines</>
+                  )}
+                </button>
               </div>
             </div>
 
@@ -399,20 +432,30 @@ export default function AdminPage() {
                       <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">Company</th>
                       <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Location</th>
                       <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Type</th>
-                      <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">Date</th>
+                      <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">Deadline</th>
+                      <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">Created</th>
                       <th className="text-right px-4 py-3 font-medium">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {dbJobs.map((job: any) => (
-                      <tr key={job.id} className="hover:bg-gray-50/50 transition-colors">
+                    {dbJobs.map((job: any) => {
+                      const dl = job.deadline ? new Date(job.deadline) : null;
+                      const expired = dl && dl < new Date();
+                      return (
+                      <tr key={job.id} className={`transition-colors ${expired ? 'bg-red-50 hover:bg-red-100/50' : 'hover:bg-gray-50/50'}`}>
                         <td className="px-4 py-3">
-                          <p className="text-gray-900 font-medium truncate max-w-[200px]">{job.title}</p>
+                          <p className={`font-medium truncate max-w-[200px] ${expired ? 'text-red-700' : 'text-gray-900'}`}>
+                            {expired && <i className="fas fa-clock text-red-400 mr-1.5 text-xs"></i>}
+                            {job.title}
+                          </p>
                         </td>
-                        <td className="px-4 py-3 text-gray-500 hidden sm:table-cell truncate max-w-[150px]">{job.company}</td>
+                        <td className={`px-4 py-3 hidden sm:table-cell truncate max-w-[150px] ${expired ? 'text-red-500' : 'text-gray-500'}`}>{job.company}</td>
                         <td className="px-4 py-3 text-gray-500 hidden md:table-cell">{job.location || '—'}</td>
                         <td className="px-4 py-3 hidden md:table-cell">
-                          <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">{job.type}</span>
+                          <span className={`text-xs px-2 py-1 rounded-full ${expired ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'}`}>{job.type}</span>
+                        </td>
+                        <td className={`px-4 py-3 text-xs hidden lg:table-cell ${expired ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>
+                          {dl ? dl.toLocaleDateString() + (expired ? ' (Expired)' : '') : '—'}
                         </td>
                         <td className="px-4 py-3 text-gray-400 text-xs hidden lg:table-cell">
                           {job.created_at ? new Date(job.created_at).toLocaleDateString() : '—'}
@@ -420,17 +463,17 @@ export default function AdminPage() {
                         <td className="px-4 py-3 text-right">
                           <button
                             onClick={() => setDeleteConfirm({ type: 'job', id: job.id })}
-                            className="text-gray-400 hover:text-red-500 px-2"
-                            title="Delete from database"
+                            className={`px-2 ${expired ? 'text-red-400 hover:text-red-700' : 'text-gray-400 hover:text-red-500'}`}
+                            title={expired ? 'Delete expired job' : 'Delete from database'}
                           >
                             <i className="fas fa-trash"></i>
                           </button>
                         </td>
                       </tr>
-                    ))}
+                    );})}
                     {!jobsLoading && dbJobs.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="text-center py-12 text-gray-400">
+                        <td colSpan={7} className="text-center py-12 text-gray-400">
                           <i className="fas fa-inbox text-3xl mb-2"></i>
                           <p>No jobs found</p>
                         </td>
@@ -438,7 +481,7 @@ export default function AdminPage() {
                     )}
                     {jobsLoading && (
                       <tr>
-                        <td colSpan={6} className="text-center py-12 text-gray-400">
+                        <td colSpan={7} className="text-center py-12 text-gray-400">
                           <i className="fas fa-spinner fa-spin text-xl"></i>
                           <p className="mt-2">Loading jobs...</p>
                         </td>

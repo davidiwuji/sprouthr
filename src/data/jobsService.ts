@@ -69,6 +69,11 @@ export async function fetchJobs(query: JobsQuery = {}): Promise<JobsResult> {
       if (category && category !== 'all') q = q.eq('category', category);
       if (experience_level && experience_level !== 'all') q = q.eq('experience_level', experience_level);
       if (workplace_type) q = q.eq('workplace_type', workplace_type);
+      
+      // ── Always hide expired jobs (deadline in the past) ──
+      const now = new Date().toISOString();
+      q = q.or(`deadline.is.null,deadline.gte.${now}`);
+      
       if (deadline) {
         const now = new Date().toISOString();
         if (deadline === 'within_7') {
@@ -115,9 +120,11 @@ export async function fetchJobs(query: JobsQuery = {}): Promise<JobsResult> {
 
 export async function fetchFeaturedJobs(limit = 6): Promise<ApiJob[]> {
   const supabase = createClient();
+  const now = new Date().toISOString();
   const { data, error } = await supabase
     .from('jobs')
     .select('*')
+    .or(`deadline.is.null,deadline.gte.${now}`)
     .order('created_at', { ascending: false })
     .limit(limit);
 
