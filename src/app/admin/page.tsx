@@ -311,33 +311,40 @@ export default function AdminPage() {
             <div className="glass rounded-2xl p-6 border border-gray-100">
               <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <button onClick={() => {
-                  const supabase = createClient();
-                  const newJob = {
-                    title: 'New Job',
-                    company: '',
-                    location: '',
-                    description: '',
-                    salary: '',
-                    type: 'Full Time',
-                    category: '',
-                    source: 'sprouthr-admin',
-                    external_id: `admin-${Date.now()}`,
-                  };
-                  supabase.from('jobs').insert([newJob]).then(({ data, error }) => {
-                    if (error) showToast(error.message, 'error');
-                    else {
-                      showToast('Job created!', 'success');
-                      setTab('jobs');
-                      setJobsPage(1);
-                      setTimeout(() => loadJobs(1, ''), 300);
-                    }
-                  });
-                }} className="p-4 rounded-xl bg-gray-50 hover:bg-[#22c55e]/10 border border-gray-100 text-left transition-all">
-                  <i className="fas fa-plus-circle text-[#22c55e] text-xl mb-1"></i>
-                  <p className="text-sm font-medium text-gray-900">Add New Job</p>
-                  <p className="text-xs text-gray-400">Create a job in Supabase</p>
-                </button>
+                <div className="p-4 rounded-xl bg-gray-50 hover:bg-[#22c55e]/10 border border-gray-100 text-left transition-all">
+                  <i className="fas fa-plus-circle text-[#22c55e] text-xl mb-2"></i>
+                  <p className="text-sm font-medium text-gray-900 mb-2">Add New Job</p>
+                  <div className="flex gap-2">
+                    <button onClick={() => {
+                      const supabase = createClient();
+                      const newJob = {
+                        title: 'New Job',
+                        company: '',
+                        location: '',
+                        description: '',
+                        salary: '',
+                        type: 'Full Time',
+                        category: '',
+                        source: 'sprouthr-admin',
+                        external_id: `admin-${Date.now()}`,
+                      };
+                      supabase.from('jobs').insert([newJob]).then(({ data, error }) => {
+                        if (error) showToast(error.message, 'error');
+                        else {
+                          showToast('Job created!', 'success');
+                          setTab('jobs');
+                          setJobsPage(1);
+                          setTimeout(() => loadJobs(1, ''), 300);
+                        }
+                      });
+                    }} className="flex-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:border-[#22c55e] hover:text-[#22c55e] transition-all">
+                      <i className="fas fa-pen mr-1"></i> Add Manually
+                    </button>
+                    <Link href="/admin/paste-job" className="flex-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:border-[#22c55e] hover:text-[#22c55e] transition-all text-center block">
+                      <i className="fab fa-whatsapp mr-1"></i> Paste
+                    </Link>
+                  </div>
+                </div>
                 <button onClick={() => { setTab('store'); setEditProduct({ id: -1, ...emptyProduct } as StoreProduct); }} className="p-4 rounded-xl bg-gray-50 hover:bg-[#22c55e]/10 border border-gray-100 text-left transition-all">
                   <i className="fas fa-cart-plus text-[#22c55e] text-xl mb-1"></i>
                   <p className="text-sm font-medium text-gray-900">Add Store Product</p>

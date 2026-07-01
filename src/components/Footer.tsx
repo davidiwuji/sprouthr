@@ -26,7 +26,7 @@ export default function Footer() {
               <i className="fab fa-telegram-plane"></i> Telegram
             </a>
             <a
-              href="https://wa.me/message/YOUR_WA_LINK"
+              href="https://wa.me/2349093767139"
               target="_blank"
               rel="noopener noreferrer"
               className="px-5 py-2 rounded-xl bg-white/20 text-white font-semibold text-sm hover:bg-white/30 transition-all flex items-center gap-2 border border-white/40"
@@ -48,7 +48,7 @@ export default function Footer() {
             <div className="flex gap-2 flex-wrap">
               {[
                 { href: 'https://t.me/sprouthr', icon: 'fa-telegram', hoverColor: '#0088cc' },
-                { href: 'https://wa.me/message/YOUR_WA_LINK', icon: 'fa-whatsapp', hoverColor: '#25D366' },
+                { href: 'https://wa.me/2349093767139', icon: 'fa-whatsapp', hoverColor: '#25D366' },
                 { href: 'https://x.com/sprouthrjobs', icon: 'fa-x-twitter', hoverColor: '#000000' },
                 { href: 'https://linkedin.com', icon: 'fa-linkedin-in' },
                 { href: 'https://instagram.com', icon: 'fa-instagram' },
