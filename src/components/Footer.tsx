@@ -26,12 +26,12 @@ export default function Footer() {
               <i className="fab fa-telegram-plane"></i> Telegram
             </a>
             <a
-              href="https://wa.me/2349093767139"
+              href="https://whatsapp.com/channel/0029VbCEHDh7dmeausPxVx1r"
               target="_blank"
               rel="noopener noreferrer"
               className="px-5 py-2 rounded-xl bg-white/20 text-white font-semibold text-sm hover:bg-white/30 transition-all flex items-center gap-2 border border-white/40"
             >
-              <i className="fab fa-whatsapp"></i> WhatsApp
+              <i className="fab fa-whatsapp"></i> WhatsApp Channel
             </a>
           </div>
         </div>
@@ -48,7 +48,7 @@ export default function Footer() {
             <div className="flex gap-2 flex-wrap">
               {[
                 { href: 'https://t.me/sprouthr', icon: 'fa-telegram', hoverColor: '#0088cc' },
-                { href: 'https://wa.me/2349093767139', icon: 'fa-whatsapp', hoverColor: '#25D366' },
+                { href: 'https://whatsapp.com/channel/0029VbCEHDh7dmeausPxVx1r', icon: 'fa-whatsapp', hoverColor: '#25D366' },
                 { href: 'https://x.com/sprouthrjobs', icon: 'fa-x-twitter', hoverColor: '#000000' },
                 { href: 'https://linkedin.com', icon: 'fa-linkedin-in' },
                 { href: 'https://instagram.com', icon: 'fa-instagram' },

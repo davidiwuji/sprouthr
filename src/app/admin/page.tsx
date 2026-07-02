@@ -1054,27 +1054,27 @@ export default function AdminPage() {
                       Cancel
                     </button>
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         if (deleteConfirm.type === 'user') handleDeleteUser(deleteConfirm.id as string);
                         else if (deleteConfirm.type === 'job') {
-                          fetch(`/api/admin/jobs?id=${deleteConfirm.id}`, { method: 'DELETE' })
-                            .then(async (res) => {
-                              const text = await res.text();
-                              let data;
-                              try { data = JSON.parse(text); } catch { data = null; }
-                              if (!res.ok) {
-                                console.error('Delete job failed:', res.status, text);
-                                showToast(data?.error || text || 'Failed to delete job', 'error');
-                              } else {
-                                showToast('Job deleted', 'info');
-                                setDeleteConfirm(null);
-                                loadJobs(jobsPage, jobsSearch);
-                              }
-                            })
-                            .catch((err) => {
-                              console.error('Delete job network error:', err);
-                              showToast('Network error: ' + (err.message || 'Unknown'), 'error');
-                            });
+                          console.log('Deleting job id:', deleteConfirm.id);
+                          try {
+                            const res = await fetch(`/api/admin/jobs?id=${deleteConfirm.id}`, { method: 'DELETE' });
+                            const text = await res.text();
+                            console.log('Delete response:', res.status, text);
+                            let data;
+                            try { data = JSON.parse(text); } catch { data = null; }
+                            if (!res.ok) {
+                              showToast(data?.error || text || 'Failed to delete job', 'error');
+                            } else {
+                              showToast('Job deleted', 'info');
+                              setDeleteConfirm(null);
+                              loadJobs(jobsPage, jobsSearch);
+                            }
+                          } catch (err: any) {
+                            console.error('Delete job error:', err);
+                            showToast('Error: ' + (err.message || 'Unknown'), 'error');
+                          }
                         } else if (deleteConfirm.type === 'product') handleDeleteProduct(deleteConfirm.id as number);
                       }}
                       className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-medium hover:bg-red-700"
