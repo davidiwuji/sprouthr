@@ -201,6 +201,21 @@ export async function POST(request: Request) {
       });
     }
 
+    if (action === 'rescan_smartyacad') {
+      const { batch = 50, offset = 0 } = data || {};
+      const apiBase = process.env.API_BASE || 'http://localhost:3001';
+      
+      const res = await fetch(`${apiBase}/api/admin/rescan-smartyacad`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ batch, offset, delay: 300 }),
+      });
+      
+      const result = await res.json();
+      if (!res.ok) return Response.json({ error: result.error }, { status: 500 });
+      return Response.json(result);
+    }
+
     return Response.json({ error: 'Unknown action' }, { status: 400 });
   } catch (e: any) {
     return Response.json({ error: e.message }, { status: 500 });

@@ -57,6 +57,8 @@ export default function AdminPage() {
   const [jobsPage, setJobsPage] = useState(1);
   const [jobsSearch, setJobsSearch] = useState('');
   const [scanningDeadlines, setScanningDeadlines] = useState(false);
+  const [rescanningSmartyacad, setRescanningSmartyacad] = useState(false);
+  const [rescanProgress, setRescanProgress] = useState<string | null>(null);
   const jobsPerPage = 20;
 
   // Users
@@ -172,6 +174,46 @@ export default function AdminPage() {
       showToast(err.message, 'error');
     } finally {
       setScanningDeadlines(false);
+    }
+  };
+
+  const rescanSmartyacad = async () => {
+    setRescanningSmartyacad(true);
+    setRescanProgress('Starting rescan...');
+    let offset = 0;
+    const batch = 50;
+    let totalFixed = 0;
+    let totalScanned = 0;
+
+    try {
+      while (true) {
+        const res = await fetch('/api/admin/fix-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'rescan_smartyacad',
+            data: { batch, offset },
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed');
+
+        totalScanned += data.scanned || 0;
+        totalFixed += data.fixed || 0;
+        setRescanProgress(`Scanned ${totalScanned} jobs, fixed ${totalFixed} apply URLs...`);
+
+        if (!data.hasMore) break;
+        offset = data.nextOffset;
+      }
+
+      showToast(`✅ Rescan complete: ${totalFixed} URLs fixed out of ${totalScanned} scanned`, 'success');
+      setRescanProgress(null);
+      loadJobs(jobsPage, jobsSearch);
+    } catch (err: any) {
+      showToast(err.message, 'error');
+      setRescanProgress(`Stopped at offset ${offset}: ${err.message}`);
+    } finally {
+      setRescanningSmartyacad(false);
     }
   };
 
@@ -420,7 +462,24 @@ export default function AdminPage() {
                     <><i className="fas fa-calendar-check mr-1"></i> Extract Deadlines</>
                   )}
                 </button>
+                <button
+                  onClick={rescanSmartyacad}
+                  disabled={rescanningSmartyacad}
+                  className="px-4 py-2.5 rounded-xl bg-amber-50 text-amber-600 text-sm hover:bg-amber-100 whitespace-nowrap transition-colors disabled:opacity-50"
+                  title="Re-scrape SmartyAcad listings to fix apply URLs, descriptions, and dates"
+                >
+                  {rescanningSmartyacad ? (
+                    <><i className="fas fa-spinner fa-spin mr-1"></i> Rescanning...</>
+                  ) : (
+                    <><i className="fas fa-link mr-1"></i> Fix Apply URLs</>
+                  )}
+                </button>
               </div>
+              {rescanProgress && (
+                <div className="w-full mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+                  <i className="fas fa-sync-alt fa-spin mr-1"></i> {rescanProgress}
+                </div>
+              )}
             </div>
 
             <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
