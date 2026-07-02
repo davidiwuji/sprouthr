@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '@/lib/AppContext';
 import { opportunities } from '@/data/opportunities';
 import { fetchJobById, mapApiJobToOpportunity, fetchScrapedJobDetail, API_BASE } from '@/data/jobsService';
-import { getTypeBadgeClass, getTypeLabel, daysUntil, formatPrice, formatLocation } from '@/lib/utils';
+import { getTypeBadgeClass, getTypeLabel, daysUntil, formatPrice, formatLocation, trackApplication } from '@/lib/utils';
 import { useParams, useSearchParams } from 'next/navigation';
 
 export default function OpportunityDetailPage() {
@@ -147,6 +147,8 @@ export default function OpportunityDetailPage() {
     // For jobs, open the source URL (usually has company contact/apply info)
     const redirectUrl = displayOpp.applicationUrl || displayOpp.url;
     if (redirectUrl) {
+      // Auto-track the application
+      trackApplication(displayOpp.title, displayOpp.company, redirectUrl);
       window.open(redirectUrl, '_blank', 'noopener,noreferrer');
       showToast('Opening application page in new tab', 'info');
     } else {

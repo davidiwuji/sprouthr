@@ -67,9 +67,12 @@ export default function DashboardPage() {
     setSavedJobs(loadSavedJobs());
   }, []);
 
-  // Listen for bookmark changes from other tabs — refresh on focus
+  // Listen for bookmark & application changes from other tabs — refresh on focus
   useEffect(() => {
-    const handler = () => setSavedJobs(loadSavedJobs());
+    const handler = () => {
+      setSavedJobs(loadSavedJobs());
+      setApplications(loadApplications());
+    };
     window.addEventListener('focus', handler);
     window.addEventListener('storage', handler);
     return () => {

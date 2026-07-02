@@ -223,7 +223,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const refreshSession = async () => {
     const supabase = createClient();
-    // Fetch latest user data from server (not cached)
+    // Force a token refresh to get latest user_metadata (e.g. is_admin)
+    try {
+      await supabase.auth.refreshSession();
+    } catch { /* ignore, fallback to getUser */ }
+    // Fetch latest user data from server
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       dispatch({ type: 'SET_USER', payload: user });

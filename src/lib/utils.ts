@@ -83,3 +83,31 @@ export function getCategoryIcon(type: string): string {
   };
   return map[type] || 'fa-briefcase';
 }
+
+// ─── Application Tracking ───
+export function trackApplication(title: string, company: string, url?: string) {
+  try {
+    const raw = localStorage.getItem('sprouthr_applications');
+    const apps: any[] = raw ? JSON.parse(raw) : [];
+
+    // Avoid duplicates (same title + company applied within 24h)
+    const today = new Date().toISOString().split('T')[0];
+    const isDuplicate = apps.some(
+      a => a.title === title && a.company === company && a.date === today
+    );
+    if (isDuplicate) return false;
+
+    const newApp = {
+      id: Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+      title,
+      company,
+      status: 'Submitted',
+      date: today,
+    };
+
+    localStorage.setItem('sprouthr_applications', JSON.stringify([newApp, ...apps]));
+    return true;
+  } catch {
+    return false;
+  }
+}

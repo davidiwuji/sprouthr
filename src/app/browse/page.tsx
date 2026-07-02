@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/lib/AppContext';
 import { fetchJobs, mapApiJobToOpportunity, mapJobToType, type ApiJob } from '@/data/jobsService';
-import { getTypeBadgeClass, getTypeLabel, daysUntil, timeAgo, formatLocation } from '@/lib/utils';
+import { getTypeBadgeClass, getTypeLabel, daysUntil, timeAgo, formatLocation, trackApplication } from '@/lib/utils';
 import AdBanner from '@/components/AdBanner';
 import { useSearchParams } from 'next/navigation';
 
@@ -278,7 +278,11 @@ export default function BrowsePage() {
                     <div className="flex items-center justify-between flex-wrap gap-2 pt-3 mt-3 border-t border-gray-200">
                       <span className="text-xs text-gray-500 capitalize truncate">{opp.subtype || opp.type}</span>
                       {opp.applicationUrl && (
-                        <a href={opp.applicationUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+                        <a href={opp.applicationUrl} target="_blank" rel="noopener noreferrer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            trackApplication(opp.title, opp.company, opp.applicationUrl);
+                          }}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
                           style={{ background: 'linear-gradient(135deg, #22c55e, #4ade80)', color: '#fff' }}>
                           Apply Now <i className="fas fa-external-link-alt text-[10px]"></i>

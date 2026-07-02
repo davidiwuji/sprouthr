@@ -29,11 +29,15 @@ Rules:
 
 export async function POST(req: NextRequest) {
   try {
-    // Auth check
+    // Auth check — allow any admin (SuperAdmin or users with is_admin metadata)
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user || user.email !== 'davidiwuji1@gmail.com') {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const isAdmin = user.email === 'davidiwuji1@gmail.com' || user.user_metadata?.is_admin === true;
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 401 });
     }
 
     const { text } = await req.json();

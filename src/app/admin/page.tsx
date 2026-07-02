@@ -236,12 +236,6 @@ export default function AdminPage() {
   };
 
   const handleDeleteUser = async (id: string) => {
-    // Only SuperAdmin can delete users
-    if (!isSuperAdmin) {
-      showToast('Only Super Admin can delete users', 'error');
-      setDeleteConfirm(null);
-      return;
-    }
     try {
       const res = await fetch('/api/admin/users', {
         method: 'DELETE',
@@ -378,28 +372,29 @@ export default function AdminPage() {
                   <i className="fas fa-plus-circle text-[#22c55e] text-xl mb-2"></i>
                   <p className="text-sm font-medium text-gray-900 mb-2">Add New Job</p>
                   <div className="flex gap-2">
-                    <button onClick={() => {
-                      const supabase = createClient();
-                      const newJob = {
-                        title: 'New Job',
-                        company: '',
-                        location: '',
-                        description: '',
-                        salary: '',
-                        type: 'Full Time',
-                        category: '',
-                        source: 'sprouthr-admin',
-                        external_id: `admin-${Date.now()}`,
-                      };
-                      supabase.from('jobs').insert([newJob]).then(({ data, error }) => {
-                        if (error) showToast(error.message, 'error');
-                        else {
-                          showToast('Job created!', 'success');
-                          setTab('jobs');
-                          setJobsPage(1);
-                          setTimeout(() => loadJobs(1, ''), 300);
-                        }
+                    <button onClick={async () => {
+                      const res = await fetch('/api/admin/jobs', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          title: 'New Job',
+                          company: '',
+                          location: '',
+                          description: '',
+                          salary: '',
+                          type: 'Full Time',
+                          category: 'job',
+                        }),
                       });
+                      const data = await res.json();
+                      if (!res.ok) {
+                        showToast(data.error || 'Failed to create job', 'error');
+                      } else {
+                        showToast('Job created! Edit it in the Jobs tab', 'success');
+                        setTab('jobs');
+                        setJobsPage(1);
+                        setTimeout(() => loadJobs(1, ''), 300);
+                      }
                     }} className="flex-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:border-[#22c55e] hover:text-[#22c55e] transition-all">
                       <i className="fas fa-pen mr-1"></i> Add Manually
                     </button>
@@ -756,7 +751,8 @@ export default function AdminPage() {
                                 {togglingId === u.id ? '...' : (u.isAdmin ? 'Demote' : 'Promote')}
                               </button>
                             )}
-                            {isSuperAdmin && u.email !== SUPER_ADMIN_EMAIL && (
+                            {/* Delete user (admins cannot delete Super Admin) */}
+                            {isAdminUser && u.email !== SUPER_ADMIN_EMAIL && (
                               <button
                                 onClick={() => setDeleteConfirm({ type: 'user', id: u.id })}
                                 className="text-gray-400 hover:text-red-500 transition-colors"
@@ -790,8 +786,9 @@ export default function AdminPage() {
                       onClick={() => {
                         if (deleteConfirm.type === 'user') handleDeleteUser(deleteConfirm.id as string);
                         else if (deleteConfirm.type === 'job') {
-                          createClient().from('jobs').delete().eq('id', deleteConfirm.id).then(({ error }) => {
-                            if (error) showToast(error.message, 'error');
+                          fetch(`/api/admin/jobs?id=${deleteConfirm.id}`, { method: 'DELETE' }).then(async (res) => {
+                            const data = await res.json();
+                            if (!res.ok) showToast(data.error || 'Failed to delete job', 'error');
                             else { showToast('Job deleted', 'info'); setDeleteConfirm(null); loadJobs(jobsPage, jobsSearch); }
                           });
                         } else if (deleteConfirm.type === 'product') handleDeleteProduct(deleteConfirm.id as number);
