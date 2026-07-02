@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import ToastContainer from '@/components/ToastContainer';
 import BackToTop from '@/components/BackToTop';
 import AdBanner from '@/components/AdBanner';
+import AnalyticsTracker from '@/components/AnalyticsTracker';
 
 const NO_AD_PAGES = ['/admin', '/employer', '/dashboard'];
 const LANDING_PAGE = '/';
@@ -63,6 +64,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       <Footer />
       <ToastContainer />
       <BackToTop />
+      <AnalyticsTracker />
     </AppProvider>
   );
 }

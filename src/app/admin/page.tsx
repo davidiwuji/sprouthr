@@ -9,7 +9,7 @@ import { createClient } from '@/utils/supabase/client';
 const SUPER_ADMIN_EMAIL = process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || 'davidiwuji1@gmail.com';
 const STORAGE_KEY_PRODUCTS = 'sprouthr_admin_products';
 
-type TabType = 'overview' | 'jobs' | 'store' | 'users';
+type TabType = 'overview' | 'jobs' | 'store' | 'users' | 'analytics';
 type ProductTabType = 'all' | keyof typeof categoryConfig;
 
 // ─── Helper ───
@@ -68,6 +68,10 @@ export default function AdminPage() {
   const [usersError, setUsersError] = useState('');
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
+  // Analytics
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
   // Stats
   const [liveJobCount, setLiveJobCount] = useState<number | null>(null);
 
@@ -117,6 +121,11 @@ export default function AdminPage() {
   // Load users when tab switches
   useEffect(() => {
     if (tab === 'users') loadUsers();
+  }, [tab]);
+
+  // Load analytics when tab switches
+  useEffect(() => {
+    if (tab === 'analytics') loadAnalytics();
   }, [tab]);
 
   // Live job count
@@ -283,6 +292,17 @@ export default function AdminPage() {
     }
   };
 
+  // ─── Analytics ───
+  const loadAnalytics = async () => {
+    setAnalyticsLoading(true);
+    try {
+      const res = await fetch('/api/analytics/summary');
+      const data = await res.json();
+      if (res.ok) setAnalyticsData(data);
+    } catch { /* ignore */ }
+    finally { setAnalyticsLoading(false); }
+  };
+
   // ─── Product CRUD ───
   const handleSaveProduct = (data: StoreProduct) => {
     if (data.id < 1) {
@@ -315,6 +335,7 @@ export default function AdminPage() {
   const tabs: { id: TabType; label: string; icon: string }[] = [
     { id: 'overview', label: 'Overview', icon: 'fa-chart-pie' },
     { id: 'jobs', label: 'Jobs', icon: 'fa-briefcase' },
+    ...(isSuperAdmin ? [{ id: 'analytics' as const, label: 'Analytics', icon: 'fa-chart-simple' }] : []),
     { id: 'store', label: 'Store', icon: 'fa-store' },
     { id: 'users', label: 'Users', icon: 'fa-users' },
   ];
@@ -691,6 +712,147 @@ export default function AdminPage() {
                     </button>
                   </div>
                 </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══════════════ ANALYTICS (Super Admin only) ═══════════════ */}
+        {tab === 'analytics' && isSuperAdmin && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-bold text-gray-900">
+                <i className="fas fa-chart-simple text-[#22c55e] mr-2"></i> Analytics
+              </h2>
+              <button
+                onClick={loadAnalytics}
+                disabled={analyticsLoading}
+                className="px-4 py-2 rounded-xl bg-gray-100 text-gray-600 text-sm font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                {analyticsLoading ? (
+                  <><i className="fas fa-spinner fa-spin mr-1"></i> Loading...</>
+                ) : (
+                  <><i className="fas fa-rotate mr-1"></i> Refresh</>
+                )}
+              </button>
+            </div>
+
+            {analyticsLoading && !analyticsData && (
+              <div className="text-center py-16 text-gray-400">
+                <i className="fas fa-spinner fa-spin text-3xl mb-3"></i>
+                <p>Loading analytics...</p>
+              </div>
+            )}
+
+            {analyticsData && (
+              <div className="space-y-6">
+                {/* ─── Summary cards ─── */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="glass rounded-2xl p-5 border border-gray-100">
+                    <p className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-1">This Week</p>
+                    <p className="text-3xl font-bold text-gray-900">{analyticsData.this_week?.page_views ?? 0}</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      <i className="fas fa-users mr-1"></i> {analyticsData.this_week?.unique_visitors ?? 0} unique
+                    </p>
+                  </div>
+                  <div className="glass rounded-2xl p-5 border border-gray-100">
+                    <p className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-1">This Month</p>
+                    <p className="text-3xl font-bold text-gray-900">{analyticsData.this_month?.page_views ?? 0}</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      <i className="fas fa-users mr-1"></i> {analyticsData.this_month?.unique_visitors ?? 0} unique
+                    </p>
+                  </div>
+                  <div className="glass rounded-2xl p-5 border border-gray-100">
+                    <p className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-1">All Time</p>
+                    <p className="text-3xl font-bold text-gray-900">{analyticsData.all_time?.page_views ?? 0}</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      <i className="fas fa-users mr-1"></i> {analyticsData.all_time?.unique_visitors ?? 0} unique · {analyticsData.all_time?.applications ?? 0} applies
+                    </p>
+                  </div>
+                </div>
+
+                {/* ─── Daily trend (30-day bar chart) ─── */}
+                <div className="glass rounded-2xl p-5 border border-gray-100">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-4">
+                    <i className="fas fa-chart-line text-[#22c55e] mr-1"></i> Daily Page Views (Last 30 Days)
+                  </h3>
+                  <div className="flex items-end gap-1 h-32">
+                    {(analyticsData.daily_trend ?? []).map((d: any) => {
+                      const max = Math.max(...(analyticsData.daily_trend ?? []).map((x: any) => x.views), 1);
+                      const pct = (d.views / max) * 100;
+                      return (
+                        <div key={d.day} className="flex-1 flex flex-col items-center group relative">
+                          <div className="absolute bottom-full mb-1 hidden group-hover:block bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
+                            {d.day}: {d.views}
+                          </div>
+                          <div
+                            className="w-full rounded-t bg-[#22c55e] hover:bg-[#16a34a] transition-colors cursor-pointer"
+                            style={{ height: `${Math.max(pct, 2)}%` }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2 text-center">
+                    {analyticsData.daily_trend?.length ?? 0} days of data
+                  </p>
+                </div>
+
+                {/* ─── Event breakdown (last 7 days) ─── */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="glass rounded-2xl p-5 border border-gray-100">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-4">
+                      <i className="fas fa-chart-bar text-[#22c55e] mr-1"></i> Events (Last 7 Days)
+                    </h3>
+                    <div className="space-y-2">
+                      {(analyticsData.event_breakdown ?? []).length === 0 && (
+                        <p className="text-sm text-gray-400">No events yet.</p>
+                      )}
+                      {(analyticsData.event_breakdown ?? []).map((e: any) => (
+                        <div key={e.event_name} className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
+                          <span className="text-sm text-gray-700 capitalize">
+                            {e.event_name.replace(/_/g, ' ')}
+                          </span>
+                          <span className="text-sm font-semibold text-gray-900">{e.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* ─── Top pages ─── */}
+                  <div className="glass rounded-2xl p-5 border border-gray-100">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-4">
+                      <i className="fas fa-ranking-star text-[#22c55e] mr-1"></i> Top Pages (All Time)
+                    </h3>
+                    <div className="space-y-2">
+                      {(analyticsData.all_time?.top_pages ?? []).length === 0 && (
+                        <p className="text-sm text-gray-400">No data yet.</p>
+                      )}
+                      {(analyticsData.all_time?.top_pages ?? []).map((p: any) => (
+                        <div key={p.page_path} className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
+                          <span className="text-sm text-gray-700 truncate max-w-[200px]">
+                            {p.page_path || '/'}
+                          </span>
+                          <span className="text-sm font-semibold text-gray-900">{p.views}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* ─── Totals row ─── */}
+                <div className="text-xs text-gray-400 text-center pb-4">
+                  <i className="fas fa-database mr-1"></i>
+                  {analyticsData.all_time?.total_events ?? 0} total events recorded
+                </div>
+              </div>
+            )}
+
+            {!analyticsLoading && !analyticsData && (
+              <div className="text-center py-16 text-gray-400">
+                <i className="fas fa-chart-simple text-3xl mb-3"></i>
+                <p>Click <strong>Refresh</strong> to load analytics.</p>
+                <p className="text-xs mt-1">Make sure the <code>analytics_events</code> table exists in Supabase.</p>
               </div>
             )}
           </div>
