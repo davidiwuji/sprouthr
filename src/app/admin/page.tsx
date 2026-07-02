@@ -1057,11 +1057,16 @@ export default function AdminPage() {
                       onClick={() => {
                         if (deleteConfirm.type === 'user') handleDeleteUser(deleteConfirm.id as string);
                         else if (deleteConfirm.type === 'job') {
-                          fetch(`/api/admin/jobs?id=${deleteConfirm.id}`, { method: 'DELETE' }).then(async (res) => {
-                            const data = await res.json();
-                            if (!res.ok) showToast(data.error || 'Failed to delete job', 'error');
-                            else { showToast('Job deleted', 'info'); setDeleteConfirm(null); loadJobs(jobsPage, jobsSearch); }
-                          });
+                          fetch(`/api/admin/jobs?id=${deleteConfirm.id}`, { method: 'DELETE' })
+                            .then(async (res) => {
+                              const data = await res.json();
+                              if (!res.ok) showToast(data.error || 'Failed to delete job', 'error');
+                              else { showToast('Job deleted', 'info'); setDeleteConfirm(null); loadJobs(jobsPage, jobsSearch); }
+                            })
+                            .catch((err) => {
+                              console.error('Delete job error:', err);
+                              showToast('Network error: ' + (err.message || 'Unknown'), 'error');
+                            });
                         } else if (deleteConfirm.type === 'product') handleDeleteProduct(deleteConfirm.id as number);
                       }}
                       className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-medium hover:bg-red-700"

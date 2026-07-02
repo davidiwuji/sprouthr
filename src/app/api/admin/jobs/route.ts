@@ -93,7 +93,16 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Missing job id' }, { status: 400 });
     }
 
-    const { error } = await svc.from('jobs').delete().eq('id', id);
+    // Try parsing as number if the id is numeric, otherwise treat as UUID string
+    const isNumeric = /^\d+$/.test(id);
+    const query = svc.from('jobs').delete();
+    if (isNumeric) {
+      query.eq('id', parseInt(id));
+    } else {
+      query.eq('id', id);
+    }
+
+    const { error } = await query;
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
