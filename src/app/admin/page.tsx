@@ -1059,12 +1059,20 @@ export default function AdminPage() {
                         else if (deleteConfirm.type === 'job') {
                           fetch(`/api/admin/jobs?id=${deleteConfirm.id}`, { method: 'DELETE' })
                             .then(async (res) => {
-                              const data = await res.json();
-                              if (!res.ok) showToast(data.error || 'Failed to delete job', 'error');
-                              else { showToast('Job deleted', 'info'); setDeleteConfirm(null); loadJobs(jobsPage, jobsSearch); }
+                              const text = await res.text();
+                              let data;
+                              try { data = JSON.parse(text); } catch { data = null; }
+                              if (!res.ok) {
+                                console.error('Delete job failed:', res.status, text);
+                                showToast(data?.error || text || 'Failed to delete job', 'error');
+                              } else {
+                                showToast('Job deleted', 'info');
+                                setDeleteConfirm(null);
+                                loadJobs(jobsPage, jobsSearch);
+                              }
                             })
                             .catch((err) => {
-                              console.error('Delete job error:', err);
+                              console.error('Delete job network error:', err);
                               showToast('Network error: ' + (err.message || 'Unknown'), 'error');
                             });
                         } else if (deleteConfirm.type === 'product') handleDeleteProduct(deleteConfirm.id as number);

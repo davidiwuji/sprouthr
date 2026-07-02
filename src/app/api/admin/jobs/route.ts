@@ -84,6 +84,9 @@ export async function PATCH(req: NextRequest) {
 
 /**
  * DELETE /api/admin/jobs?id=xxx — Delete a job
+ *
+ * Uses the Supabase REST API directly (via fetch) instead of the JS client,
+ * to avoid any SDK chaining issues with DELETE.
  */
 export async function DELETE(req: NextRequest) {
   try {
@@ -93,22 +96,31 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Missing job id' }, { status: 400 });
     }
 
-    // Try parsing as number if the id is numeric, otherwise treat as UUID string
-    const isNumeric = /^\d+$/.test(id);
-    const query = svc.from('jobs').delete();
-    if (isNumeric) {
-      query.eq('id', parseInt(id));
-    } else {
-      query.eq('id', id);
-    }
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-    const { error } = await query;
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    // Build the filter — handle both numeric and UUID ids
+    const filter = /^\d+$/.test(id) ? `id=eq.${id}` : `id=eq.${id}`;
+
+    const res = await fetch(`${supabaseUrl}/rest/v1/jobs?${filter}`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': serviceKey,
+        'Authorization': `Bearer ${serviceKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
+      },
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.error(`Supabase REST DELETE failed (${res.status}):`, text);
+      return NextResponse.json({ error: `Delete failed: ${text || res.statusText}` }, { status: res.status });
     }
 
     return NextResponse.json({ success: true });
   } catch (e: any) {
+    console.error('DELETE handler error:', e);
     return NextResponse.json({ error: e.message || 'Internal server error' }, { status: 500 });
   }
 }
