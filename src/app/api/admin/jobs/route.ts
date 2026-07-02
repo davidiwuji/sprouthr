@@ -1,56 +1,59 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
 
 const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || 'davidiwuji1@gmail.com';
 
-const svc = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-/**
- * Extract the Supabase access token from cookies.
- * @supabase/ssr v0.12 stores the session as a JSON cookie named sb-{project_ref}-auth-token.
- */
-async function getAccessTokenFromCookies(): Promise<string | null> {
+/** Verify admin by reading the Supabase session cookie. */
+async function verifyAdminFromRequest(req: NextRequest): Promise<boolean> {
   try {
-    const cookieStore = await cookies();
-    const allCookies = cookieStore.getAll();
-    // Find the first cookie matching the Supabase auth token pattern
-    const authCookie = allCookies.find(c => 
-      c.name.startsWith('sb-') && c.name.endsWith('-auth-token')
-    );
-    if (!authCookie) return null;
-
-    const raw = authCookie.value;
-    // The cookie value is a JSON-encoded session: { access_token, refresh_token, ... }
-    try {
-      const session = JSON.parse(raw);
-      return session.access_token || null;
-    } catch {
-      // Fallback: treat the whole value as the token
-      return raw || null;
+    // Read cookies via the Cookie header (most reliable in Route Handlers)
+    const cookieHeader = req.headers.get('cookie') || '';
+    const cookies = cookieHeader.split(';').map(c => c.trim().split('=')).filter(p => p.length >= 2);
+    const cookieMap = new Map(cookies.map(([k, ...v]) => [k.trim(), v.join('=')]));
+    
+    // Find Supabase auth session cookie: sb-{project_ref}-auth-token
+    let sessionCookie = '';
+    for (const [name, value] of cookieMap) {
+      if (name.startsWith('sb-') && name.endsWith('-auth-token')) {
+        sessionCookie = decodeURIComponent(value);
+        break;
+      }
     }
-  } catch {
-    return null;
+    if (!sessionCookie) {
+      return false;
+    }
+
+    // Parse the session JSON
+    let accessToken = '';
+    try {
+      const session = JSON.parse(sessionCookie);
+      accessToken = session.access_token || '';
+    } catch {
+      accessToken = sessionCookie || '';
+    }
+    if (!accessToken) return false;
+
+    // Verify with service role client
+    const svc = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    const { data: { user }, error } = await svc.auth.getUser(accessToken);
+    if (error || !user) return false;
+
+    return user.email === SUPER_ADMIN_EMAIL || user.user_metadata?.is_admin === true;
+  } catch (e) {
+    console.error('verifyAdmin error:', e);
+    return false;
   }
 }
 
-/** Verify the user is an admin, return the user if so. */
-async function getAdminUser(): Promise<any | null> {
-  try {
-    const token = await getAccessTokenFromCookies();
-    if (!token) return null;
-
-    const { data: { user }, error } = await svc.auth.getUser(token);
-    if (error || !user) return null;
-
-    const isAdmin = user.email === SUPER_ADMIN_EMAIL || user.user_metadata?.is_admin === true;
-    return isAdmin ? user : null;
-  } catch {
-    return null;
-  }
+/** Create a service client lazily per request. */
+function getSvc() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
 }
 
 /**
@@ -58,8 +61,8 @@ async function getAdminUser(): Promise<any | null> {
  */
 export async function POST(req: NextRequest) {
   try {
-    const admin = await getAdminUser();
-    if (!admin) {
+    const isAdmin = await verifyAdminFromRequest(req);
+    if (!isAdmin) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 401 });
     }
 
@@ -68,6 +71,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
     }
 
+    const svc = getSvc();
     const { data, error } = await svc.from('jobs').insert({
       title: job.title,
       company: job.company || 'Unknown',
@@ -91,7 +95,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, id: data?.id });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ error: e.message || 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -100,8 +104,8 @@ export async function POST(req: NextRequest) {
  */
 export async function PATCH(req: NextRequest) {
   try {
-    const admin = await getAdminUser();
-    if (!admin) {
+    const isAdmin = await verifyAdminFromRequest(req);
+    if (!isAdmin) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 401 });
     }
 
@@ -112,7 +116,6 @@ export async function PATCH(req: NextRequest) {
     }
 
     const updates = await req.json();
-    // Only allow specific fields to be updated
     const allowedFields = [
       'title', 'company', 'description', 'salary', 'location',
       'type', 'category', 'deadline', 'experience_level',
@@ -129,6 +132,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
     }
 
+    const svc = getSvc();
     const { error } = await svc.from('jobs').update(safeUpdates).eq('id', id);
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -136,7 +140,7 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ error: e.message || 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -145,8 +149,8 @@ export async function PATCH(req: NextRequest) {
  */
 export async function DELETE(req: NextRequest) {
   try {
-    const admin = await getAdminUser();
-    if (!admin) {
+    const isAdmin = await verifyAdminFromRequest(req);
+    if (!isAdmin) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 401 });
     }
 
@@ -156,6 +160,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Missing job id' }, { status: 400 });
     }
 
+    const svc = getSvc();
     const { error } = await svc.from('jobs').delete().eq('id', id);
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -163,6 +168,6 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ error: e.message || 'Internal server error' }, { status: 500 });
   }
 }
