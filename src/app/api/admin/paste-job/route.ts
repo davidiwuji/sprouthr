@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { createClient } from '@/utils/supabase/server';
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
+
+const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || 'davidiwuji1@gmail.com';
 
 const SYSTEM_PROMPT = `You are a job parser. Extract structured job information from raw text (like WhatsApp messages).
 
@@ -29,13 +32,14 @@ Rules:
 
 export async function POST(req: NextRequest) {
   try {
-    // Auth check — allow any admin (SuperAdmin or users with is_admin metadata)
-    const supabase = await createClient();
+    // Auth check — proper SSR client pattern
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const isAdmin = user.email === 'davidiwuji1@gmail.com' || user.user_metadata?.is_admin === true;
+    const isAdmin = user.email === SUPER_ADMIN_EMAIL || user.user_metadata?.is_admin === true;
     if (!isAdmin) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 401 });
     }
@@ -79,20 +83,18 @@ export async function POST(req: NextRequest) {
       // Try to extract JSON from code fences
       const match = content.match(/```(?:json)?\s*([\s\S]*?)```/);
       if (match) {
-        parsed = JSON.parse(match[1]);
-      } else {
-        const braceMatch = content.match(/\{[\s\S]*\}/);
-        if (braceMatch) {
-          parsed = JSON.parse(braceMatch[0]);
-        } else {
-          throw new Error('Could not parse AI response as JSON');
+        try {
+          parsed = JSON.parse(match[1].trim());
+        } catch {
+          parsed = { title: null, description: 'Failed to parse job details from the message. Please try again with clearer formatting.' };
         }
+      } else {
+        parsed = { title: null, description: 'Failed to parse job details from the message.' };
       }
     }
 
     return NextResponse.json({ parsed, raw: content });
-  } catch (error: any) {
-    console.error('Paste-job parse error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }

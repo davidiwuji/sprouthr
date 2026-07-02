@@ -1,29 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient as createServerClient } from '@/utils/supabase/server';
+import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/server';
 
 const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || 'davidiwuji1@gmail.com';
-
-async function checkAdmin() {
-  const supabase = await createServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const isAdmin = user.email === SUPER_ADMIN_EMAIL || user.user_metadata?.is_admin === true;
-  return isAdmin ? user : null;
-}
 
 /**
  * POST /api/admin/jobs — Create a new job (admin only)
  */
 export async function POST(req: NextRequest) {
   try {
-    const admin = await checkAdmin();
-    if (!admin) {
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 401 });
+    }
+    const isAdmin = user.email === SUPER_ADMIN_EMAIL || user.user_metadata?.is_admin === true;
+    if (!isAdmin) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 401 });
     }
 
-    // Use service role client for DB operations
-    const { createClient } = await import('@supabase/supabase-js');
-    const svc = createClient(
+    // Use service role for DB operations
+    const { createClient: sbCreateClient } = await import('@supabase/supabase-js');
+    const svc = sbCreateClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
@@ -65,22 +65,29 @@ export async function POST(req: NextRequest) {
  */
 export async function DELETE(req: NextRequest) {
   try {
-    const admin = await checkAdmin();
-    if (!admin) {
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 401 });
     }
+    const isAdmin = user.email === SUPER_ADMIN_EMAIL || user.user_metadata?.is_admin === true;
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 401 });
+    }
+
+    const { createClient: sbCreateClient } = await import('@supabase/supabase-js');
+    const svc = sbCreateClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
     if (!id) {
       return NextResponse.json({ error: 'Missing job id' }, { status: 400 });
     }
-
-    const { createClient } = await import('@supabase/supabase-js');
-    const svc = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
 
     const { error } = await svc.from('jobs').delete().eq('id', id);
     if (error) {
