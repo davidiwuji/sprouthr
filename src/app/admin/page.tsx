@@ -47,6 +47,7 @@ export default function AdminPage() {
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [editProduct, setEditProduct] = useState<StoreProduct | null>(null);
+  const [editJob, setEditJob] = useState<any | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'job' | 'product' | 'user'; id: string | number } | null>(null);
   const [productFilter, setProductFilter] = useState<ProductTabType>('all');
 
@@ -372,30 +373,12 @@ export default function AdminPage() {
                   <i className="fas fa-plus-circle text-[#22c55e] text-xl mb-2"></i>
                   <p className="text-sm font-medium text-gray-900 mb-2">Add New Job</p>
                   <div className="flex gap-2">
-                    <button onClick={async () => {
-                      const res = await fetch('/api/admin/jobs', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          title: 'New Job',
-                          company: '',
-                          location: '',
-                          description: '',
-                          salary: '',
-                          type: 'Full Time',
-                          category: 'job',
-                        }),
-                      });
-                      const data = await res.json();
-                      if (!res.ok) {
-                        showToast(data.error || 'Failed to create job', 'error');
-                      } else {
-                        showToast('Job created! Edit it in the Jobs tab', 'success');
-                        setTab('jobs');
-                        setJobsPage(1);
-                        setTimeout(() => loadJobs(1, ''), 300);
-                      }
-                    }} className="flex-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:border-[#22c55e] hover:text-[#22c55e] transition-all">
+                    <button onClick={() => setEditJob({
+                      title: '', company: '', location: '', description: '',
+                      salary: '', type: 'Full Time', category: 'job',
+                      deadline: null, experience_level: 'entry',
+                      workplace_type: '', url: ''
+                    })} className="flex-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:border-[#22c55e] hover:text-[#22c55e] transition-all">
                       <i className="fas fa-pen mr-1"></i> Add Manually
                     </button>
                     <Link href="/admin/paste-job" className="flex-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:border-[#22c55e] hover:text-[#22c55e] transition-all text-center block">
@@ -514,7 +497,14 @@ export default function AdminPage() {
                         <td className="px-4 py-3 text-gray-400 text-xs hidden lg:table-cell">
                           {job.created_at ? new Date(job.created_at).toLocaleDateString() : '—'}
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-4 py-3 text-right flex gap-1 justify-end items-center">
+                          <button
+                            onClick={() => setEditJob({ ...job })}
+                            className="p-1.5 text-gray-400 hover:text-[#22c55e] transition-colors"
+                            title="Edit job"
+                          >
+                            <i className="fas fa-pen text-xs"></i>
+                          </button>
                           <button
                             onClick={() => setDeleteConfirm({ type: 'job', id: job.id })}
                             className={`px-2 ${expired ? 'text-red-400 hover:text-red-700' : 'text-gray-400 hover:text-red-500'}`}
@@ -582,6 +572,125 @@ export default function AdminPage() {
                 >
                   Next <i className="fas fa-chevron-right ml-1"></i>
                 </button>
+              </div>
+            )}
+
+            {editJob && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40" onClick={() => setEditJob(null)}>
+                <div className="bg-white rounded-2xl p-6 max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto shadow-xl" onClick={e => e.stopPropagation()}>
+                  <h3 className="font-semibold text-gray-900 mb-4">
+                    <i className="fas fa-pen text-[#22c55e] mr-2"></i> Edit Job
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Title *</label>
+                      <input type="text" value={editJob.title || ''} onChange={e => setEditJob({ ...editJob, title: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#22c55e]" />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Company</label>
+                      <input type="text" value={editJob.company || ''} onChange={e => setEditJob({ ...editJob, company: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#22c55e]" />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Location</label>
+                      <input type="text" value={editJob.location || ''} onChange={e => setEditJob({ ...editJob, location: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#22c55e]" />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Salary</label>
+                      <input type="text" value={editJob.salary || ''} onChange={e => setEditJob({ ...editJob, salary: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#22c55e]" />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Type</label>
+                      <select value={editJob.type || 'Full Time'} onChange={e => setEditJob({ ...editJob, type: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#22c55e] bg-white">
+                        {['Full Time', 'Part Time', 'Contract', 'Remote', 'Internship', 'Graduate Program', 'Fellowship', 'Volunteer'].map(t => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Category</label>
+                      <select value={editJob.category || 'job'} onChange={e => setEditJob({ ...editJob, category: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#22c55e] bg-white">
+                        {['job', 'internship', 'scholarship', 'fellowship', 'graduate', 'bootcamp', 'grant', 'volunteer'].map(c => (
+                          <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Workplace</label>
+                      <select value={editJob.workplace_type || ''} onChange={e => setEditJob({ ...editJob, workplace_type: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#22c55e] bg-white">
+                        <option value="">Any</option>
+                        <option value="remote">Remote</option>
+                        <option value="hybrid">Hybrid</option>
+                        <option value="onsite">On-Site</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Experience Level</label>
+                      <select value={editJob.experience_level || 'entry'} onChange={e => setEditJob({ ...editJob, experience_level: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#22c55e] bg-white">
+                        {['entry', 'intermediate', 'senior', 'lead', 'all'].map(l => (
+                          <option key={l} value={l}>{l.charAt(0).toUpperCase() + l.slice(1)}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Deadline</label>
+                      <input type="date" value={editJob.deadline ? editJob.deadline.substring(0, 10) : ''} onChange={e => setEditJob({ ...editJob, deadline: e.target.value || null })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#22c55e]" />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Apply URL</label>
+                      <input type="url" value={editJob.url || ''} onChange={e => setEditJob({ ...editJob, url: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#22c55e]" placeholder="https://..." />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs text-gray-500 mb-1">Description</label>
+                      <textarea value={editJob.description || ''} onChange={e => setEditJob({ ...editJob, description: e.target.value })} rows={5} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#22c55e]" />
+                    </div>
+                  </div>
+                  <div className="flex gap-3 justify-end">
+                    <button onClick={() => setEditJob(null)} className="px-4 py-2 rounded-xl bg-gray-100 text-gray-600 text-sm font-medium hover:bg-gray-200">Cancel</button>
+                    <button onClick={async () => {
+                      if (!editJob.title?.trim()) {
+                        showToast('Title is required', 'error');
+                        return;
+                      }
+                      try {
+                        const isNew = !editJob.id;
+                        const res = await fetch(
+                          isNew ? '/api/admin/jobs' : `/api/admin/jobs?id=${editJob.id}`,
+                          {
+                            method: isNew ? 'POST' : 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              title: editJob.title,
+                              company: editJob.company,
+                              description: editJob.description,
+                              salary: editJob.salary,
+                              location: editJob.location,
+                              type: editJob.type,
+                              category: editJob.category,
+                              deadline: editJob.deadline,
+                              experience_level: editJob.experience_level,
+                              workplace_type: editJob.workplace_type,
+                              url: editJob.url,
+                            }),
+                          }
+                        );
+                        const data = await res.json();
+                        if (!res.ok) {
+                          showToast(data.error || 'Failed to save job', 'error');
+                        } else {
+                          showToast(isNew ? 'Job created!' : 'Job updated!', 'success');
+                          setEditJob(null);
+                          setTab('jobs');
+                          setJobsPage(1);
+                          setTimeout(() => loadJobs(1, ''), 300);
+                        }
+                      } catch (e: any) {
+                        showToast(e.message || 'Failed to save job', 'error');
+                      }
+                    }} className="px-4 py-2 rounded-xl bg-[#22c55e] text-white text-sm font-medium hover:bg-[#16a34a]">
+                      <i className="fas fa-save mr-1"></i> Save
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
